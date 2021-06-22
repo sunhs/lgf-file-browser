@@ -11,6 +11,12 @@ import { FilePathItem, ProjectFileItem, ProjectItem } from "./filePathItem";
 const fileConsideredProject: Set<string> = new Set<string>(
     [".git", ".svn", ".projectile", ".vscode", "CMakeLists.txt", "Makefile", "setup.py"]
 );
+enum Messages {
+    selectProject = "select project",
+    selectWorkspaceProject = "select project from workspace",
+    deleteWorkspaceProject = "delete project from workspace",
+    projectAdded = "project added"
+}
 
 
 export class ProjectManager extends FileBrowser {
@@ -65,6 +71,7 @@ export class ProjectManager extends FileBrowser {
         this.readProjectList();
 
         this.projectQuickPick = window.createQuickPick();
+        this.projectQuickPick.title = Messages.selectWorkspaceProject;
         this.projectQuickPick.items = workspace.workspaceFolders ?
             workspace.workspaceFolders.map(
                 (folder, index, arr) => new ProjectItem(folder.name, folder.uri.path)
@@ -93,6 +100,7 @@ export class ProjectManager extends FileBrowser {
         }
 
         this.projectQuickPick = window.createQuickPick();
+        this.projectQuickPick.title = Messages.selectWorkspaceProject;
         utils.setContext(utils.States.inLgfProjMgr, true);
         this.findFileFromWSProject(activeWSFolder!.uri.path);
     }
@@ -105,6 +113,7 @@ export class ProjectManager extends FileBrowser {
         }
 
         this.projectQuickPick = window.createQuickPick();
+        this.projectQuickPick.title = Messages.deleteWorkspaceProject;
         this.projectQuickPick.items = workspace.workspaceFolders.map(
             (folder, index, arr) => new ProjectItem(folder.name, folder.uri.path)
         );
@@ -123,6 +132,7 @@ export class ProjectManager extends FileBrowser {
         let dir = this.quickPick!.activeItems[0].absPath!;
         this.projects.set(PathLib.basename(dir), dir);
         this.saveProjects();
+        window.showInformationMessage(Messages.projectAdded);
         this.dispose();
     }
 
@@ -216,6 +226,7 @@ export class ProjectManager extends FileBrowser {
 
     buildQuickPickFromProjectList() {
         this.projectQuickPick = window.createQuickPick();
+        this.projectQuickPick.title = Messages.selectProject;
         this.projectQuickPick.items = this.projects.map(
             (v, k) => new ProjectItem(k!, v)
         );
@@ -230,6 +241,7 @@ export class ProjectManager extends FileBrowser {
                     (uri) => new ProjectFileItem(PathLib.basename(uri.path), uri.path)
                 );
                 this.projectQuickPick!.items = items;
+                this.projectQuickPick!.title = PathLib.basename(projectRoot);
                 this.projectQuickPick!.matchOnDescription = true;
                 this.projectQuickPick!.onDidAccept(
                     (e) => {
