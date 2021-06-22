@@ -1,70 +1,45 @@
-# lgf-file-browser README
+# LGF File Browser
 
-This is the README for your extension "lgf-file-browser". After writing up a brief description, we recommend including the following sections.
+This is a file browser which lets you quickly navigate through files, add or delete projects.
 
-## Features
+There are often times when you don't want to leave your hands off the keyboard, just to reach to the mouse for a few clicks and go back typing. There are often times when you press `cmd+p` to search for a file, only to find multiple files with the same name coming from different projects, struggling to distinguish between them.
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+That's what `LGF File browser` is here for.
 
-For example if there is an image subfolder under your extension project workspace:
+## Installation
 
-\!\[feature X\]\(images/feature-x.png\)
+Search `lgf-file-browser` in the `Extensions` view.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## Commands and Features
 
-## Requirements
+Functionalities are splitted into two parts:
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+1. the basic file browser for finding arbitrary files
+2. the project manager to record your projects, and enables you to quickly switch between them
 
-## Extension Settings
+When you add a folder to the workspace or open a new document, this extension will try to discover the project and save it.
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+- `lgf-file-browser.show` reveal the file browser (`C-c C-f`)
+- `lgf-file-browser.goUp` go to the parent directory (`backspace`)
+- `lgf-file-browser.goToHome` go to the home directory (`~`)
+- `lgf-file-browser.goToRoot` go to `/` directory (`/`)
+- `lgf-file-browser.toogleHidden` hide or show dot files (`C-h`)
+- `lgf-file-browser.toggleFilter` hide or show filttered files (`C-f`)
+- `lgf-file-browser.addProject` choose a directory and save to the project list (`C-c C-a`)
+- `lgf-file-browser.confirmAddProject` this is a quick pick action for `lgf-file-browser.addProject`, since the `enter` is used to go into a directory, we need some key to confirm adding (`C-a`)
+- `lgf-file-browser.openProject` open a saved project, bring it to the workspace (`C-c C-o`)
+- `lgf-file-browser.findFileFromProject` choose a project from the saved project list and find a file in it (`C-c C-p`)
+- `lgf-file-browser.findFileFromWorkspaceProject` choose a project from workspace and find a file in it (`C-c C-w`)
+- `lgf-file-browser.findFileFromCurrentProject` find a file in the current project, which is inferred from the file you're editting (`C-c C-c`)
+- `lgf-file-browser.deleteProjectFromWorkspace` remove a project from the workspace (`C-c C-d`)
+- `lgf-file-browser.editProjectList` edit the project list (`C-c C-e`)
 
-For example:
+## Configuration
 
-This extension contributes the following settings:
+- `lgf-file-browser.filterFilePatterns` A list of regex patterns. This is used to filter the files when you press `C-f` in the file browser. Note that this doesn't apply when you're searching in projects, where instead `Files: Exclude` from the VSCode settings would take effect.
 
-* `myExtension.enable`: enable/disable this extension
-* `myExtension.thing`: set to `blah` to do something
+## Limitation and Known Issues
 
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
------------------------------------------------------------------------------------------------------------
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-**Note:** You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+CMD+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux) or `Cmd+Space` (macOS) to see a list of Markdown snippets
-
-### For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+- File paths are based on Unix like systems. Problems are likely to be encountered on Windows.
+- `lgf-file-browser.findFileFromProject` would automatically add the project to workspace before finding files, due to the VSCode API limitation (`workspace.findFiles`). However, when there are currently no workspace folders, after adding the project to workspace, there won't be search candidates for project files. A bug to fix.
+- Key bindings are a bit Emacs like. Change them at your need. But remember to keep the `when` clause.
