@@ -1,5 +1,5 @@
 import { QuickPickItem, FileType, CancellationError } from "vscode";
-import * as pathLib from "path";
+import * as PathLib from "path";
 
 export class FilePathItem implements QuickPickItem {
     absPath: string;
@@ -10,7 +10,7 @@ export class FilePathItem implements QuickPickItem {
     label: string;
 
     constructor(path: string, fileType: FileType) {
-        if (!pathLib.isAbsolute(path)) {
+        if (!PathLib.isAbsolute(path)) {
             let err = new CancellationError();
             err.message = `path ${path} is not absolute`;
             throw err;
@@ -18,7 +18,7 @@ export class FilePathItem implements QuickPickItem {
         this.absPath = path;
 
         this.fileType = fileType;
-        let baseName = pathLib.basename(path);
+        let baseName = PathLib.basename(path);
         switch (this.fileType) {
             case FileType.Directory:
                 this.label = `$(folder) ${baseName}`;
@@ -32,5 +32,27 @@ export class FilePathItem implements QuickPickItem {
                 this.label = `$(file) ${baseName}`;
                 break;
         }
+    }
+}
+
+
+export class ProjectItem implements QuickPickItem {
+    description: string;
+    label: string;
+
+    constructor(projectName: string, projectRoot: string) {
+        this.label = projectName;
+        this.description = projectRoot;
+    }
+}
+
+
+export class ProjectFileItem implements QuickPickItem {
+    description: string;
+    label: string;
+
+    constructor(fileName: string, filePath: string) {
+        this.label = fileName;
+        this.description = filePath;
     }
 }

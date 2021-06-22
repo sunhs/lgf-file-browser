@@ -3,6 +3,7 @@
 	"displayName": "lgf-file-browser",
 	"description": "",
 	"version": "0.0.1",
+	"publisher": "hyesun",
 	"engines": {
 		"vscode": "^1.57.0"
 	},
@@ -12,11 +13,18 @@
 	"activationEvents": [
 		"onCommand:lgf-file-browser.show",
 		"onCommand:lgf-file-browser.goUp",
-		"onCommand:lgf-file-browser.accept",
 		"onCommand:lgf-file-browser.toggleHidden",
 		"onCommand:lgf-file-browser.toggleFilter",
 		"onCommand:lgf-file-browser.goToHome",
-		"onCommand:lgf-file-browser.goToRoot"
+		"onCommand:lgf-file-browser.goToRoot",
+		"onCommand:lgf-file-browser.addProject",
+		"onCommand:lgf-file-browser.openProject",
+		"onCommand:lgf-file-browser.findFileFromProject",
+		"onCommand:lgf-file-browser.findFileFromWorkspaceProject",
+		"onCommand:lgf-file-browser.findFileFromCurrentProject",
+		"onCommand:lgf-file-browser.deleteProjectFromWorkspace",
+		"onCommand:lgf-file-browser.editProjectList",
+		"onCommand:lgf-file-browser.confirmAddProject"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -26,53 +34,79 @@
 				"properties": {
 					"lgf-file-browser.filterFilePatterns": {
 						"type": "array",
-						"default": []
+						"default": [".git", ".cache"],
+						"$comment": "regex patterns to filter files while browsing in lgf file browser"
+					},
+					"lgf-file-browser.filterProjectFileGlobPatterns": {
+						"type": "array",
+						"default": ["**.git/**", "**.cache/**"]
 					}
 				}
 			}
 		],
-		"commands": [
-			{
-				"command": "lgf-file-browser.show",
-				"title": "Show LGF File Browser"
-			}
-		],
 		"keybindings": [
-            {
-                "key": "backspace",
-                "command": "lgf-file-browser.goUp",
-                "when": "inLgfFileBrowser && lgfFileBrowserEmpty"
-            },
-            {
-                "key": "shift+`",
-                "command": "lgf-file-browser.goToHome",
-                "when": "inLgfFileBrowser && lgfFileBrowserEmpty"
-            },
-            {
-                "key": "/",
-                "command": "lgf-file-browser.goToRoot",
-                "when": "inLgfFileBrowser && lgfFileBrowserEmpty"
-            },
-            {
-                "key": "enter",
-                "command": "lgf-file-browser.accept",
-                "when": "inLgfFileBrowser"
-            },
-            {
-                "key": "tab",
-                "command": "lgf-file-browser.accept",
-                "when": "inLgfFileBrowser"
-            },
-            {
-                "key": "ctrl+h",
-                "command": "lgf-file-browser.toggleHidden",
-                "when": "inLgfFileBrowser"
-            },
-            {
-                "key": "ctrl+f",
-                "command": "lgf-file-browser.toggleFilter",
-                "when": "inLgfFileBrowser"
-            }
+			{
+				"key": "ctrl+c ctrl+f",
+				"command": "lgf-file-browser.show"
+			},
+			{
+				"key": "backspace",
+				"command": "lgf-file-browser.goUp",
+				"when": "inLgfFileBrowser && lgfFileBrowserEmpty"
+			},
+			{
+				"key": "shift+`",
+				"command": "lgf-file-browser.goToHome",
+				"when": "inLgfFileBrowser && lgfFileBrowserEmpty"
+			},
+			{
+				"key": "/",
+				"command": "lgf-file-browser.goToRoot",
+				"when": "inLgfFileBrowser && lgfFileBrowserEmpty"
+			},
+			{
+				"key": "ctrl+h",
+				"command": "lgf-file-browser.toggleHidden",
+				"when": "inLgfFileBrowser && !inLgfProjMgr"
+			},
+			{
+				"key": "ctrl+f",
+				"command": "lgf-file-browser.toggleFilter",
+				"when": "inLgfFileBrowser && !inLgfProjMgr"
+			},
+			{
+				"key": "ctrl+c ctrl+a",
+				"command": "lgf-file-browser.addProject"
+			},
+			{
+				"key": "ctrl+c ctrl+o",
+				"command": "lgf-file-browser.openProject"
+			},
+			{
+				"key": "ctrl+c ctrl+p",
+				"command": "lgf-file-browser.findFileFromProject"
+			},
+			{
+				"key": "ctrl+c ctrl+w",
+				"command": "lgf-file-browser.findFileFromWorkspaceProject"
+			},
+			{
+				"key": "ctrl+c ctrl+c",
+				"command": "lgf-file-browser.findFileFromCurrentProject"
+			},
+			{
+				"key": "ctrl+c ctrl+d",
+				"command": "lgf-file-browser.deleteProjectFromWorkspace"
+			},
+			{
+				"key": "ctrl+c ctrl+e",
+				"command": "lgf-file-browser.editProjectList"
+			},
+			{
+				"key": "ctrl+a",
+				"command": "lgf-file-browser.confirmAddProject",
+				"when": "inLgfFileBrowser && inLgfProjMgr"
+			}
 		]
 	},
 	"scripts": {
@@ -84,16 +118,19 @@
 		"test": "node ./out/test/runTest.js"
 	},
 	"devDependencies": {
-		"@types/vscode": "^1.57.0",
 		"@types/glob": "^7.1.3",
 		"@types/mocha": "^8.2.2",
 		"@types/node": "14.x",
-		"eslint": "^7.27.0",
+		"@types/vscode": "^1.57.0",
 		"@typescript-eslint/eslint-plugin": "^4.26.0",
 		"@typescript-eslint/parser": "^4.26.0",
+		"eslint": "^7.27.0",
 		"glob": "^7.1.7",
 		"mocha": "^8.4.0",
 		"typescript": "^4.3.2",
 		"vscode-test": "^1.5.2"
+	},
+	"dependencies": {
+		"typescript-map": "^0.1.0"
 	}
 }
