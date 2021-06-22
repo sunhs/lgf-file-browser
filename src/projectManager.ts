@@ -237,6 +237,11 @@ export class ProjectManager extends FileBrowser {
         let globPattern = new RelativePattern(projectRoot, "**");
         workspace.findFiles(globPattern, undefined).then(
             (uris) => {
+                if (uris.length === 0) {
+                    this.dispose();
+                    return;
+                }
+
                 let items = uris.map(
                     (uri) => new ProjectFileItem(PathLib.basename(uri.path), uri.path)
                 );
