@@ -224,7 +224,7 @@ export class ProjectManager extends FileBrowser {
 
     findFileFromWSProject(projectRoot: string) {
         let globPattern = new RelativePattern(projectRoot, "**");
-        workspace.findFiles(globPattern).then(
+        workspace.findFiles(globPattern, undefined).then(
             (uris) => {
                 let items = uris.map(
                     (uri) => new ProjectFileItem(PathLib.basename(uri.path), uri.path)

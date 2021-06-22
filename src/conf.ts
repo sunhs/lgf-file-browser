@@ -6,6 +6,7 @@ export let FILTER_PATTERNS: RegExp[] = [];
 
 export enum Config {
     filterFilePatterns = "filterFilePatterns",
+    filterProjectFileGlobPatterns = "filterProjectFileGlobPatterns"
 }
 
 export function getConfig<T>(item: Config): T | undefined {

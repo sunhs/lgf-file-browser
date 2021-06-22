@@ -34,12 +34,8 @@
 				"properties": {
 					"lgf-file-browser.filterFilePatterns": {
 						"type": "array",
-						"default": [".git", ".cache"],
+						"default": [".git", ".cache", "node_modules"],
 						"$comment": "regex patterns to filter files while browsing in lgf file browser"
-					},
-					"lgf-file-browser.filterProjectFileGlobPatterns": {
-						"type": "array",
-						"default": ["**.git/**", "**.cache/**"]
 					}
 				}
 			}
