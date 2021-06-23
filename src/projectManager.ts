@@ -159,6 +159,7 @@ export class ProjectManager extends FileBrowser {
     // so this command automatically adds the project to workspace before finding files.
     onDidAcceptFindFileFromProject() {
         let selected = this.projectQuickPick!.selectedItems[0];
+        this.projectQuickPick!.value = "";
 
         let existedFolder = workspace.getWorkspaceFolder(Uri.file(selected.description));
         if (!existedFolder) {
@@ -182,6 +183,7 @@ export class ProjectManager extends FileBrowser {
 
     onDidAcceptFindFileFromWSProject() {
         let projectRoot = this.projectQuickPick!.selectedItems[0].description;
+        this.projectQuickPick!.value = "";
         this.findFileFromWSProject(projectRoot);
     }
 
