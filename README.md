@@ -1,6 +1,6 @@
 # LGF File Browser
 
-This is a file browser which lets you quickly navigate through files, add or delete projects.
+This is a file browser for VSCode which lets you quickly navigate through files, add or delete projects.
 
 There are often times when you don't want to leave your hands off the keyboard, just to reach to the mouse for a few clicks and go back typing. There are often times when you press `cmd+p` to search for a file, only to find multiple files with the same name coming from different projects, struggling to distinguish between them.
 
