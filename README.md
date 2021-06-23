@@ -36,7 +36,9 @@ When you add a folder to the workspace or open a new document, this extension wi
 
 ## Configuration
 
-- `lgf-file-browser.filterFilePatterns` A list of regex patterns. This is used to filter the files when you press `C-f` in the file browser. Note that this doesn't apply when you're searching in projects, where instead `Files: Exclude` from the VSCode settings would take effect.
+- `lgf-file-browser.filterGlobPatterns` A list of glob patterns to filter out search results.
+- `lgf-file-browser.projectConfFiles` A list of filenames (e.g., `.git`) indicating that the directory containing one or more of them is a project.
+- `lgf-file-browser.projectDotIgnoreFiles` A list of filenames (e.g., `.gitignore`) that will be used to extend `lgf-file-browser.filterGlobPatterns` when searching in a project.
 
 ## Limitation and Known Issues
 

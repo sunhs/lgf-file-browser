@@ -2,7 +2,7 @@
 	"name": "lgf-file-browser",
 	"displayName": "lgf-file-browser",
 	"description": "",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"publisher": "hyesun",
 	"repository": {
 		"url": "https://github.com/sunhs/lgf-file-browser"
@@ -65,6 +65,14 @@
 							"setup.py"
 						],
 						"$comment": "files indicating that this is a project directory"
+					},
+					"lgf-file-browser.projectDotIgnoreFiles": {
+						"type": "array",
+						"default": [
+							".gitignore",
+							".vscodeignore"
+						],
+						"$comment": "files to extend `filterGlobPatterns` in a project"
 					}
 				}
 			}

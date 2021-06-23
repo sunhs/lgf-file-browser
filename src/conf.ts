@@ -3,7 +3,8 @@ import { workspace } from "vscode";
 
 enum ConfigEnum {
     filterGlobPatterns = "filterGlobPatterns",
-    projectConfFiles = "projectConfFiles"
+    projectConfFiles = "projectConfFiles",
+    projectDotIgnoreFiles = "projectDotIgnoreFiles",
 }
 
 
@@ -15,9 +16,11 @@ function getConfig<T>(item: ConfigEnum): T | undefined {
 export class Config {
     filterGlobPatterns: string[] = [];
     projectConfFiles: string[] = [];
+    projectDotIgnoreFiles: string[] = [];
 
     update() {
         this.filterGlobPatterns = getConfig(ConfigEnum.filterGlobPatterns)!;
         this.projectConfFiles = getConfig(ConfigEnum.projectConfFiles)!;
+        this.projectDotIgnoreFiles = getConfig(ConfigEnum.projectDotIgnoreFiles)!;
     }
 }

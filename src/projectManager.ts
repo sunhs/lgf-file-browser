@@ -240,9 +240,7 @@ export class ProjectManager extends FileBrowser {
 
     findFileFromWSProject(projectRoot: string) {
         let includeGlobPattern = new RelativePattern(projectRoot, "**");
-        let excludeGlobPattern = new RelativePattern(
-            projectRoot, `{${this.config.filterGlobPatterns.join(",")}}`
-        );
+        let excludeGlobPattern = this.buildExcludeGlobPattern(projectRoot);
         workspace.findFiles(includeGlobPattern, excludeGlobPattern).then(
             (uris) => {
                 if (uris.length === 0) {
@@ -265,6 +263,32 @@ export class ProjectManager extends FileBrowser {
                 );
                 this.projectQuickPick!.show();
             }
+        );
+    }
+
+    buildExcludeGlobPattern(projectRoot: string): RelativePattern {
+        let extendedPatterns: string[] = [];
+        this.config.projectDotIgnoreFiles.forEach(
+            (ignoreFile) => {
+                let ignoreFilePath = PathLib.join(projectRoot, ignoreFile);
+                if (fs.existsSync(ignoreFilePath)) {
+                    String(fs.readFileSync(ignoreFilePath)).split("\n").forEach(
+                        (line) => {
+                            line = line.trim();
+                            if (!line.startsWith("#")) {
+                                extendedPatterns.push(line);
+                            }
+                        }
+                    );
+                }
+            }
+        );
+
+        let patternSet: Set<string> = new Set<string>(
+            this.config.filterGlobPatterns.concat(extendedPatterns)
+        );
+        return new RelativePattern(
+            projectRoot, `{${Array.from(patternSet).join(",")}}`
         );
     }
 
