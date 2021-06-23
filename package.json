@@ -48,16 +48,16 @@
 					"lgf-file-browser.filterProjectFileGlobPatterns": {
 						"type": "array",
 						"default": [
-							".git",
-							".svn",
-							".hg",
-							".DS_Store",
-							".pyc",
-							"node_modules",
-							"out",
-							"build",
-							".cache",
-							"**/target/**"
+							"**/.git",
+							"**/.svn",
+							"**/.hg",
+							"**/.DS_Store",
+							"**/*.pyc",
+							"**/node_modules",
+							"**/out",
+							"**/build",
+							"**/.cache",
+							"**/target"
 						],
 						"$comment": "glob patterns to filter paths while searching in project manager"
 					},
