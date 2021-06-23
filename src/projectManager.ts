@@ -77,6 +77,7 @@ export class ProjectManager extends FileBrowser {
             ) : [];
         this.projectQuickPick.matchOnDescription = true;
         this.projectQuickPick.onDidAccept(this.onDidAcceptFindFileFromWSProject.bind(this));
+        this.projectQuickPick.onDidHide(this.dispose.bind(this));
 
         utils.setContext(utils.States.inLgfProjMgr, true);
         this.projectQuickPick.show();
@@ -99,6 +100,7 @@ export class ProjectManager extends FileBrowser {
         }
 
         this.projectQuickPick = window.createQuickPick();
+        this.projectQuickPick.onDidHide(this.dispose.bind(this));
         this.projectQuickPick.title = Messages.selectWorkspaceProject;
         utils.setContext(utils.States.inLgfProjMgr, true);
         this.findFileFromWSProject(activeWSFolder!.uri.path);
@@ -118,6 +120,7 @@ export class ProjectManager extends FileBrowser {
         );
         this.projectQuickPick.matchOnDescription = true;
         this.projectQuickPick.onDidAccept(this.onDidAcceptDelProjectFromWorkspace.bind(this));
+        this.projectQuickPick.onDidHide(this.dispose.bind(this));
 
         utils.setContext(utils.States.inLgfProjMgr, true);
         this.projectQuickPick.show();
@@ -232,6 +235,7 @@ export class ProjectManager extends FileBrowser {
             (v, k) => new ProjectItem(k!, v)
         );
         this.projectQuickPick.matchOnDescription = true;
+        this.projectQuickPick.onDidHide(this.dispose.bind(this));
     }
 
     findFileFromWSProject(projectRoot: string) {

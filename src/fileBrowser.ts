@@ -34,6 +34,7 @@ export class FileBrowser {
         this.update(this.currentDir);
         this.quickPick!.onDidAccept(this.onDidAccept.bind(this));
         this.quickPick!.onDidChangeValue(this.onDidChangeValue.bind(this));
+        this.quickPick!.onDidHide(this.dispose.bind(this));
     }
 
     dispose() {
