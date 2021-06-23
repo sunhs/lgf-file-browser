@@ -296,7 +296,7 @@ export class ProjectManager extends FileBrowser {
                     }
 
                     let workspaceFolder = workspace.getWorkspaceFolder(editor.document.uri);
-                    if (workspaceFolder === undefined || this.projects.has(workspaceFolder.name)) {
+                    if (workspaceFolder !== undefined && this.projects.has(workspaceFolder.name)) {
                         continue;
                     }
 
@@ -333,7 +333,7 @@ export class ProjectManager extends FileBrowser {
             dir = PathLib.dirname(dir);
         }
 
-        window.showWarningMessage(`failed to detect a project for ${filePath}`);
+        console.log(`failed to detect a project for ${filePath}`);
     }
 
     saveProjects() {
