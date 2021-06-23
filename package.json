@@ -37,8 +37,43 @@
 				"properties": {
 					"lgf-file-browser.filterFilePatterns": {
 						"type": "array",
-						"default": [".git", ".cache", "node_modules"],
+						"default": [
+							".git",
+							".cache",
+							"node_modules",
+							".*-lock.json"
+						],
 						"$comment": "regex patterns to filter files while browsing in lgf file browser"
+					},
+					"lgf-file-browser.filterProjectFileGlobPatterns": {
+						"type": "array",
+						"default": [
+							".git",
+							".svn",
+							".hg",
+							".DS_Store",
+							".pyc",
+							"node_modules",
+							"out",
+							"build",
+							".cache",
+							"**/target/**"
+						],
+						"$comment": "glob patterns to filter paths while searching in project manager"
+					},
+					"lgf-file-browser.projectConfFiles": {
+						"type": "array",
+						"default": [
+							".git",
+							".svn",
+							".hg",
+							".projectile",
+							".vscode",
+							"CMakeLists.txt",
+							"Makefile",
+							"setup.py"
+						],
+						"$comment": "files indicating that this is a project directory"
 					}
 				}
 			}

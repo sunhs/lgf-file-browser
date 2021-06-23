@@ -8,9 +8,6 @@ import { FileBrowser } from "./fileBrowser";
 import { FilePathItem, ProjectFileItem, ProjectItem } from "./filePathItem";
 
 
-const fileConsideredProject: Set<string> = new Set<string>(
-    [".git", ".svn", ".projectile", ".vscode", "CMakeLists.txt", "Makefile", "setup.py"]
-);
 enum Messages {
     selectProject = "select project",
     selectWorkspaceProject = "select project from workspace",
@@ -23,15 +20,17 @@ export class ProjectManager extends FileBrowser {
     projectListFile: string = PathLib.join(OS.homedir(), ".lgf-proj-mgr.json");
     projects: TSMap<string, string> = new TSMap<string, string>();
     projectQuickPick: QuickPick<ProjectItem> | undefined;
+    fileConsideredProject: Set<string> = new Set<string>();
 
     constructor() {
         super();
-        this.readProjectList();
         this.registerListener();
     }
 
     /*********************************** CONFIG SECTION ***********************************/
-    readProjectList() {
+    setUp() {
+        this.config.update();
+        this.fileConsideredProject = new Set<string>(this.config.projectConfFiles);
         if (!fs.existsSync(this.projectListFile)) {
             fs.writeFileSync(this.projectListFile, "{}");
         }
@@ -42,7 +41,7 @@ export class ProjectManager extends FileBrowser {
     /*********************************** QUICKPICK COMMAND SECTION ***********************************/
     // add project to project list
     showAddProject() {
-        this.readProjectList();
+        this.setUp();
         // this will call this.update() which allows users to navigate through directories
         // also this will invoke context setting in `FileBrowser`
         utils.setContext(utils.States.inLgfProjMgr, true);
@@ -51,7 +50,7 @@ export class ProjectManager extends FileBrowser {
 
     // add project to current workspace
     showOpenProject() {
-        this.readProjectList();
+        this.setUp();
         this.buildQuickPickFromProjectList();
         this.projectQuickPick!.onDidAccept(this.onDidAcceptOpenProject.bind(this));
         utils.setContext(utils.States.inLgfProjMgr, true);
@@ -59,7 +58,7 @@ export class ProjectManager extends FileBrowser {
     }
 
     showFindFileFromProject() {
-        this.readProjectList();
+        this.setUp();
         this.buildQuickPickFromProjectList();
         this.projectQuickPick!.onDidAccept(this.onDidAcceptFindFileFromProject.bind(this));
         utils.setContext(utils.States.inLgfProjMgr, true);
@@ -68,7 +67,7 @@ export class ProjectManager extends FileBrowser {
 
     // find file from one of workspace projects
     showFindFileFromWSProject() {
-        this.readProjectList();
+        this.setUp();
 
         this.projectQuickPick = window.createQuickPick();
         this.projectQuickPick.title = Messages.selectWorkspaceProject;
@@ -88,7 +87,7 @@ export class ProjectManager extends FileBrowser {
      * Current active project is inferred from the file currently being editted.
      */
     showFindFileFromCurrentProject() {
-        this.readProjectList();
+        this.setUp();
 
         let activeWSFolder: WorkspaceFolder | undefined;
         let document = window.activeTextEditor?.document;
@@ -106,7 +105,7 @@ export class ProjectManager extends FileBrowser {
     }
 
     showDeleteProjectFromWorkspace() {
-        this.readProjectList();
+        this.setUp();
 
         if (workspace.workspaceFolders === undefined || workspace.workspaceFolders.length === 0) {
             return;
@@ -236,8 +235,11 @@ export class ProjectManager extends FileBrowser {
     }
 
     findFileFromWSProject(projectRoot: string) {
-        let globPattern = new RelativePattern(projectRoot, "**");
-        workspace.findFiles(globPattern, undefined).then(
+        let includeGlobPattern = new RelativePattern(projectRoot, "**");
+        let excludeGlobPattern = new RelativePattern(
+            projectRoot, `{${this.config.filterProjectFileGlobPatters.join(",")}}`
+        );
+        workspace.findFiles(includeGlobPattern, excludeGlobPattern).then(
             (uris) => {
                 if (uris.length === 0) {
                     this.dispose();
@@ -323,7 +325,7 @@ export class ProjectManager extends FileBrowser {
             let files = await workspace.fs.readDirectory(Uri.file(dir));
             let fileNames = files.map(([fileName, _]) => fileName);
             let intersection = [...fileNames].filter(
-                fileName => fileConsideredProject.has(fileName)
+                fileName => this.fileConsideredProject.has(fileName)
             );
             if (intersection.length !== 0) {
                 this.projects.set(PathLib.basename(dir), dir);

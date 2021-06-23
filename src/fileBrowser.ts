@@ -1,8 +1,8 @@
-import { commands, FileType, QuickPick, Uri, window, workspace } from "vscode";
+import { commands, QuickPick, Uri, window, workspace } from "vscode";
 import * as PathLib from "path";
 import * as OS from "os";
 import { FilePathItem } from "./filePathItem";
-import { FILTER_PATTERNS, loadConf } from "./conf";
+import { Config } from "./conf";
 import * as utils from "./utils";
 
 
@@ -12,15 +12,13 @@ export class FileBrowser {
     currentItems: FilePathItem[] = [];
     hideDotFiles: boolean = true;
     filterFiles: boolean = true;
-    filterPatterns: RegExp[] = [];
+    config: Config = new Config();
 
     // the start point
     show() {
-        loadConf();
-
+        this.config.update();
         this.hideDotFiles = true;
-        this.filterPatterns = FILTER_PATTERNS;
-        this.filterFiles = FILTER_PATTERNS.length !== 0;
+        this.filterFiles = this.config.filterPatterns.length !== 0;
 
         this.quickPick = window.createQuickPick();
 
@@ -126,7 +124,7 @@ export class FileBrowser {
                     return;
                 }
                 if (this.filterFiles) {
-                    for (let pattern of this.filterPatterns) {
+                    for (let pattern of this.config.filterPatterns) {
                         if (pattern.test(baseName)) {
                             filePathItem.show = false;
                             return;
