@@ -1,6 +1,7 @@
 import { commands, QuickPick, Uri, window, workspace } from "vscode";
 import * as PathLib from "path";
 import * as OS from "os";
+import { isMatch } from "micromatch";
 import { FilePathItem } from "./filePathItem";
 import { Config } from "./conf";
 import * as utils from "./utils";
@@ -18,7 +19,7 @@ export class FileBrowser {
     show() {
         this.config.update();
         this.hideDotFiles = true;
-        this.filterFiles = this.config.filterPatterns.length !== 0;
+        this.filterFiles = this.config.filterGlobPatterns.length !== 0;
 
         this.quickPick = window.createQuickPick();
 
@@ -125,8 +126,8 @@ export class FileBrowser {
                     return;
                 }
                 if (this.filterFiles) {
-                    for (let pattern of this.config.filterPatterns) {
-                        if (pattern.test(baseName)) {
+                    for (let pattern of this.config.filterGlobPatterns) {
+                        if (isMatch(baseName, pattern)) {
                             filePathItem.show = false;
                             return;
                         }

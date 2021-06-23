@@ -241,7 +241,7 @@ export class ProjectManager extends FileBrowser {
     findFileFromWSProject(projectRoot: string) {
         let includeGlobPattern = new RelativePattern(projectRoot, "**");
         let excludeGlobPattern = new RelativePattern(
-            projectRoot, `{${this.config.filterProjectFileGlobPatters.join(",")}}`
+            projectRoot, `{${this.config.filterGlobPatterns.join(",")}}`
         );
         workspace.findFiles(includeGlobPattern, excludeGlobPattern).then(
             (uris) => {
