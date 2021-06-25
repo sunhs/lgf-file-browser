@@ -20,6 +20,7 @@ export class ProjectManager extends FileBrowser {
     projectListFile: string = PathLib.join(OS.homedir(), ".lgf-proj-mgr.json");
     projects: TSMap<string, string> = new TSMap<string, string>();
     projectQuickPick: QuickPick<ProjectItem> | undefined;
+    projectFileQuickPick: QuickPick<ProjectFileItem> | undefined;
     fileConsideredProject: Set<string> = new Set<string>();
 
     constructor() {
@@ -52,6 +53,7 @@ export class ProjectManager extends FileBrowser {
     showOpenProject() {
         this.setUp();
         this.buildQuickPickFromProjectList();
+        this.projectQuickPick!.title = Messages.selectProject;
         this.projectQuickPick!.onDidAccept(this.onDidAcceptOpenProject.bind(this));
         utils.setContext(utils.States.inLgfProjMgr, true);
         this.projectQuickPick!.show();
@@ -60,6 +62,7 @@ export class ProjectManager extends FileBrowser {
     showFindFileFromProject() {
         this.setUp();
         this.buildQuickPickFromProjectList();
+        this.projectQuickPick!.title = Messages.selectProject;
         this.projectQuickPick!.onDidAccept(this.onDidAcceptFindFileFromProject.bind(this));
         utils.setContext(utils.States.inLgfProjMgr, true);
         this.projectQuickPick!.show();
@@ -68,19 +71,11 @@ export class ProjectManager extends FileBrowser {
     // find file from one of workspace projects
     showFindFileFromWSProject() {
         this.setUp();
-
-        this.projectQuickPick = window.createQuickPick();
-        this.projectQuickPick.title = Messages.selectWorkspaceProject;
-        this.projectQuickPick.items = workspace.workspaceFolders ?
-            workspace.workspaceFolders.map(
-                (folder, index, arr) => new ProjectItem(folder.name, folder.uri.path)
-            ) : [];
-        this.projectQuickPick.matchOnDescription = true;
-        this.projectQuickPick.onDidAccept(this.onDidAcceptFindFileFromWSProject.bind(this));
-        this.projectQuickPick.onDidHide(this.dispose.bind(this));
-
+        this.buidlQuickPickFromWorkspaceProjects();
+        this.projectQuickPick!.title = Messages.selectWorkspaceProject;
+        this.projectQuickPick!.onDidAccept(this.onDidAcceptFindFileFromWSProject.bind(this));
         utils.setContext(utils.States.inLgfProjMgr, true);
-        this.projectQuickPick.show();
+        this.projectQuickPick!.show();
     }
 
     /*
@@ -99,11 +94,8 @@ export class ProjectManager extends FileBrowser {
             window.showErrorMessage("cannot infer current project");
         }
 
-        this.projectQuickPick = window.createQuickPick();
-        this.projectQuickPick.onDidHide(this.dispose.bind(this));
-        this.projectQuickPick.title = Messages.selectWorkspaceProject;
         utils.setContext(utils.States.inLgfProjMgr, true);
-        this.findFileFromWSProject(activeWSFolder!.uri.path);
+        this.buildQuickPickFromProjectFiles(activeWSFolder!.uri.path);
     }
 
     showDeleteProjectFromWorkspace() {
@@ -113,17 +105,11 @@ export class ProjectManager extends FileBrowser {
             return;
         }
 
-        this.projectQuickPick = window.createQuickPick();
-        this.projectQuickPick.title = Messages.deleteWorkspaceProject;
-        this.projectQuickPick.items = workspace.workspaceFolders.map(
-            (folder, index, arr) => new ProjectItem(folder.name, folder.uri.path)
-        );
-        this.projectQuickPick.matchOnDescription = true;
-        this.projectQuickPick.onDidAccept(this.onDidAcceptDelProjectFromWorkspace.bind(this));
-        this.projectQuickPick.onDidHide(this.dispose.bind(this));
-
+        this.buidlQuickPickFromWorkspaceProjects();
+        this.projectQuickPick!.title = Messages.deleteWorkspaceProject;
+        this.projectQuickPick!.onDidAccept(this.onDidAcceptDelProjectFromWorkspace.bind(this));
         utils.setContext(utils.States.inLgfProjMgr, true);
-        this.projectQuickPick.show();
+        this.projectQuickPick!.show();
     }
 
     /*********************************** NORMAL COMMAND SECTION ***********************************/
@@ -180,13 +166,13 @@ export class ProjectManager extends FileBrowser {
             }
         }
 
-        this.findFileFromWSProject(selected.description);
+        this.buildQuickPickFromProjectFiles(selected.description);
     }
 
     onDidAcceptFindFileFromWSProject() {
         let projectRoot = this.projectQuickPick!.selectedItems[0].description;
         this.projectQuickPick!.value = "";
-        this.findFileFromWSProject(projectRoot);
+        this.buildQuickPickFromProjectFiles(projectRoot);
     }
 
     onDidAcceptDelProjectFromWorkspace() {
@@ -230,7 +216,6 @@ export class ProjectManager extends FileBrowser {
 
     buildQuickPickFromProjectList() {
         this.projectQuickPick = window.createQuickPick();
-        this.projectQuickPick.title = Messages.selectProject;
         this.projectQuickPick.items = this.projects.map(
             (v, k) => new ProjectItem(k!, v)
         );
@@ -238,7 +223,21 @@ export class ProjectManager extends FileBrowser {
         this.projectQuickPick.onDidHide(this.dispose.bind(this));
     }
 
-    findFileFromWSProject(projectRoot: string) {
+    buidlQuickPickFromWorkspaceProjects() {
+        this.projectQuickPick = window.createQuickPick();
+        this.projectQuickPick.items = workspace.workspaceFolders ?
+            workspace.workspaceFolders.map(
+                (folder, index, arr) => new ProjectItem(folder.name, folder.uri.path)
+            ) : [];
+        this.projectQuickPick.matchOnDescription = true;
+        this.projectQuickPick.onDidHide(this.dispose.bind(this));
+    }
+
+    buildQuickPickFromProjectFiles(projectRoot: string) {
+        this.projectQuickPick?.dispose();
+        this.projectFileQuickPick = window.createQuickPick();
+        this.projectFileQuickPick.onDidHide(this.dispose.bind(this));
+
         let includeGlobPattern = new RelativePattern(projectRoot, "**");
         let excludeGlobPattern = this.buildExcludeGlobPattern(projectRoot);
         workspace.findFiles(includeGlobPattern, excludeGlobPattern).then(
@@ -251,17 +250,17 @@ export class ProjectManager extends FileBrowser {
                 let items = uris.map(
                     (uri) => new ProjectFileItem(PathLib.basename(uri.path), uri.path)
                 );
-                this.projectQuickPick!.items = items;
-                this.projectQuickPick!.title = PathLib.basename(projectRoot);
-                this.projectQuickPick!.matchOnDescription = true;
-                this.projectQuickPick!.onDidAccept(
+                this.projectFileQuickPick!.items = items;
+                this.projectFileQuickPick!.title = PathLib.basename(projectRoot);
+                this.projectFileQuickPick!.matchOnDescription = true;
+                this.projectFileQuickPick!.onDidAccept(
                     (e) => {
-                        let filePath = this.projectQuickPick!.selectedItems[0].description;
+                        let filePath = this.projectFileQuickPick!.selectedItems[0].description;
                         commands.executeCommand("vscode.open", Uri.file(filePath));
                         this.dispose();
                     }
                 );
-                this.projectQuickPick!.show();
+                this.projectFileQuickPick!.show();
             }
         );
     }
