@@ -199,8 +199,12 @@ export class ProjectFileItem implements QuickPickItem {
 
     constructor(projectRoot: string, filePath: string) {
         this.label = PathLib.basename(filePath);
-        this.description = PathLib.join(PathLib.basename(projectRoot), this.label);
         this.absPath = filePath;
         this.projectRoots.add(projectRoot);
+        let relPath = filePath.replace(PathLib.dirname(projectRoot), "");
+        if (relPath.startsWith("/")) {
+            relPath = relPath.substr(1);
+        }
+        this.description = relPath;
     }
 }
