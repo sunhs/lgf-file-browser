@@ -2,10 +2,9 @@ import * as OS from "os";
 import * as PathLib from "path";
 import * as fs from "fs";
 import * as utils from "./utils";
-import { commands, QuickPick, RelativePattern, Uri, window, workspace, WorkspaceFolder } from "vscode";
-import { TSMap } from "typescript-map";
+import { commands, QuickPick, RelativePattern, Uri, window, workspace } from "vscode";
 import { FileBrowser } from "./fileBrowser";
-import { FilePathItem, ProjectFileItem, ProjectItem } from "./filePathItem";
+import { FilePathItem, ProjectFileItem, ProjectItem, getFileItemFromCache, loadRecentHistoryLog, saveRecentHistorLog, updateRecentHistoryLog } from "./filePathItem";
 
 
 enum Messages {
@@ -18,13 +17,20 @@ enum Messages {
 
 export class ProjectManager extends FileBrowser {
     projectListFile: string = PathLib.join(OS.homedir(), ".lgf-proj-mgr.json");
-    projects: TSMap<string, string> = new TSMap<string, string>();
+    projects: Map<string, string> = new Map<string, string>();
+    recentHistoryLog: string = PathLib.join(OS.homedir(), ".lgf-proj-mgr-rank.json");
     projectQuickPick: QuickPick<ProjectItem> | undefined;
     projectFileQuickPick: QuickPick<ProjectFileItem> | undefined;
     fileConsideredProject: Set<string> = new Set<string>();
 
     constructor() {
         super();
+
+        if (!fs.existsSync(this.recentHistoryLog)) {
+            fs.writeFileSync(this.recentHistoryLog, "{}");
+        }
+        loadRecentHistoryLog(this.recentHistoryLog);
+
         this.registerListener();
     }
 
@@ -32,11 +38,16 @@ export class ProjectManager extends FileBrowser {
     setUp() {
         this.config.update();
         this.fileConsideredProject = new Set<string>(this.config.projectConfFiles);
+
         if (!fs.existsSync(this.projectListFile)) {
             fs.writeFileSync(this.projectListFile, "{}");
         }
-        let content = fs.readFileSync(this.projectListFile, "utf8");
-        this.projects.fromJSON(JSON.parse(content));
+        let parsed: { [key: string]: string } = JSON.parse(fs.readFileSync(this.projectListFile, "utf8"));
+        Object.entries(parsed).forEach(
+            ([k, v]) => {
+                this.projects.set(k, v);
+            }
+        );
     }
 
     /*********************************** QUICKPICK COMMAND SECTION ***********************************/
@@ -53,19 +64,13 @@ export class ProjectManager extends FileBrowser {
     showOpenProject() {
         this.setUp();
         this.buildQuickPickFromProjectList();
-        this.projectQuickPick!.title = Messages.selectProject;
         this.projectQuickPick!.onDidAccept(this.onDidAcceptOpenProject.bind(this));
-        utils.setContext(utils.States.inLgfProjMgr, true);
-        this.projectQuickPick!.show();
     }
 
     showFindFileFromProject() {
         this.setUp();
         this.buildQuickPickFromProjectList();
-        this.projectQuickPick!.title = Messages.selectProject;
         this.projectQuickPick!.onDidAccept(this.onDidAcceptFindFileFromProject.bind(this));
-        utils.setContext(utils.States.inLgfProjMgr, true);
-        this.projectQuickPick!.show();
     }
 
     // find file from one of workspace projects
@@ -74,28 +79,24 @@ export class ProjectManager extends FileBrowser {
         this.buidlQuickPickFromWorkspaceProjects();
         this.projectQuickPick!.title = Messages.selectWorkspaceProject;
         this.projectQuickPick!.onDidAccept(this.onDidAcceptFindFileFromWSProject.bind(this));
-        utils.setContext(utils.States.inLgfProjMgr, true);
         this.projectQuickPick!.show();
     }
 
-    /*
-     * find file from current active project
-     * Current active project is inferred from the file currently being editted.
-     */
     showFindFileFromCurrentProject() {
         this.setUp();
-
-        let activeWSFolder: WorkspaceFolder | undefined;
         let document = window.activeTextEditor?.document;
         if (document && !document.isUntitled) {
-            activeWSFolder = workspace.getWorkspaceFolder(document.uri);
+            this.tryResolveProjectRoot(document.uri.path).then(
+                (projectRoot) => {
+                    if (projectRoot === undefined) {
+                        window.showErrorMessage("cannot infer current project");
+                        return;
+                    }
+                    utils.setContext(utils.States.inLgfProjMgr, true);
+                    this.buildQuickPickFromProjectFiles(new ProjectItem(projectRoot!));
+                }
+            );
         }
-        if (activeWSFolder === undefined) {
-            window.showErrorMessage("cannot infer current project");
-        }
-
-        utils.setContext(utils.States.inLgfProjMgr, true);
-        this.buildQuickPickFromProjectFiles(activeWSFolder!.uri.path);
     }
 
     showDeleteProjectFromWorkspace() {
@@ -108,7 +109,6 @@ export class ProjectManager extends FileBrowser {
         this.buidlQuickPickFromWorkspaceProjects();
         this.projectQuickPick!.title = Messages.deleteWorkspaceProject;
         this.projectQuickPick!.onDidAccept(this.onDidAcceptDelProjectFromWorkspace.bind(this));
-        utils.setContext(utils.States.inLgfProjMgr, true);
         this.projectQuickPick!.show();
     }
 
@@ -131,14 +131,7 @@ export class ProjectManager extends FileBrowser {
     /**************************************** EVENT SECTION ****************************************/
     onDidAcceptOpenProject() {
         let selected = this.projectQuickPick!.selectedItems[0];
-        workspace.updateWorkspaceFolders(
-            workspace.workspaceFolders ? workspace.workspaceFolders.length : 0,
-            null,
-            {
-                uri: Uri.file(selected.description),
-                name: selected.label
-            }
-        );
+        selected.intoWorkspace();
         this.dispose();
     }
 
@@ -147,40 +140,17 @@ export class ProjectManager extends FileBrowser {
     // so this command automatically adds the project to workspace before finding files.
     onDidAcceptFindFileFromProject() {
         let selected = this.projectQuickPick!.selectedItems[0];
-        this.projectQuickPick!.value = "";
-
-        let existedFolder = workspace.getWorkspaceFolder(Uri.file(selected.description));
-        if (!existedFolder) {
-            let status = workspace.updateWorkspaceFolders(
-                workspace.workspaceFolders ? workspace.workspaceFolders.length : 0,
-                null,
-                {
-                    uri: Uri.file(selected.description),
-                    name: selected.label
-                }
-            );
-            if (status === false) {
-                window.showErrorMessage(`fail to add ${selected.description} to workspace`);
-                this.dispose();
-                return;
-            }
-        }
-
-        this.buildQuickPickFromProjectFiles(selected.description);
+        this.buildQuickPickFromProjectFiles(selected);
     }
 
     onDidAcceptFindFileFromWSProject() {
-        let projectRoot = this.projectQuickPick!.selectedItems[0].description;
-        this.projectQuickPick!.value = "";
-        this.buildQuickPickFromProjectFiles(projectRoot);
+        let projectItem = this.projectQuickPick!.selectedItems[0];
+        this.buildQuickPickFromProjectFiles(projectItem);
     }
 
     onDidAcceptDelProjectFromWorkspace() {
-        let projectRoot = this.projectQuickPick!.selectedItems[0].description;
-        let workspaceFolder = workspace.getWorkspaceFolder(Uri.file(projectRoot));
-        if (workspaceFolder !== undefined) {
-            workspace.updateWorkspaceFolders(workspaceFolder.index, 1);
-        }
+        let projectItem = this.projectQuickPick!.selectedItems[0];
+        projectItem.removeFromWorkspace();
         this.dispose();
     }
 
@@ -216,48 +186,51 @@ export class ProjectManager extends FileBrowser {
 
     buildQuickPickFromProjectList() {
         this.projectQuickPick = window.createQuickPick();
-        this.projectQuickPick.items = this.projects.map(
-            (v, k) => new ProjectItem(k!, v)
+        let projectItems: ProjectItem[] = [];
+        this.projects.forEach(
+            (v, _) => {
+                projectItems.push(new ProjectItem(v));
+            }
         );
+        this.projectQuickPick.items = projectItems;
+        this.projectQuickPick.title = Messages.selectProject;
         this.projectQuickPick.matchOnDescription = true;
         this.projectQuickPick.onDidHide(this.dispose.bind(this));
+        utils.setContext(utils.States.inLgfProjMgr, true);
+        this.projectQuickPick!.show();
     }
 
     buidlQuickPickFromWorkspaceProjects() {
         this.projectQuickPick = window.createQuickPick();
         this.projectQuickPick.items = workspace.workspaceFolders ?
             workspace.workspaceFolders.map(
-                (folder, index, arr) => new ProjectItem(folder.name, folder.uri.path)
+                (folder, index, arr) => new ProjectItem(folder.uri.path)
             ) : [];
         this.projectQuickPick.matchOnDescription = true;
         this.projectQuickPick.onDidHide(this.dispose.bind(this));
+        utils.setContext(utils.States.inLgfProjMgr, true);
     }
 
-    buildQuickPickFromProjectFiles(projectRoot: string) {
+    buildQuickPickFromProjectFiles(projectItem: ProjectItem) {
         this.projectQuickPick?.dispose();
-        this.projectFileQuickPick = window.createQuickPick();
-        this.projectFileQuickPick.onDidHide(this.dispose.bind(this));
 
-        let includeGlobPattern = new RelativePattern(projectRoot, "**");
-        let excludeGlobPattern = this.buildExcludeGlobPattern(projectRoot);
-        workspace.findFiles(includeGlobPattern, excludeGlobPattern).then(
-            (uris) => {
-                if (uris.length === 0) {
-                    this.dispose();
+        projectItem.getFileItems(
+            this.buildExcludeGlobPattern(projectItem.absProjectRoot)
+        ).then(
+            (projectFileItems) => {
+                if (!projectFileItems) {
                     return;
                 }
 
-                let items = uris.map(
-                    (uri) => new ProjectFileItem(PathLib.basename(uri.path), uri.path)
-                );
-                this.projectFileQuickPick!.items = items;
-                this.projectFileQuickPick!.title = PathLib.basename(projectRoot);
+                this.projectFileQuickPick = window.createQuickPick();
+                this.projectFileQuickPick!.items = projectFileItems;
+                this.projectFileQuickPick!.title = PathLib.basename(projectItem.label);
                 this.projectFileQuickPick!.matchOnDescription = true;
+                this.projectFileQuickPick.onDidHide(this.dispose.bind(this));
                 this.projectFileQuickPick!.onDidAccept(
                     (e) => {
-                        let filePath = this.projectFileQuickPick!.selectedItems[0].description;
+                        let filePath = this.projectFileQuickPick!.selectedItems[0].absPath;
                         commands.executeCommand("vscode.open", Uri.file(filePath));
-                        this.dispose();
                     }
                 );
                 this.projectFileQuickPick!.show();
@@ -298,9 +271,6 @@ export class ProjectManager extends FileBrowser {
                     return;
                 }
                 for (let folder of e.added) {
-                    if (this.projects.has(folder.name)) {
-                        continue;
-                    }
                     this.tryAddProject(folder.uri.path);
                 }
             }
@@ -312,35 +282,55 @@ export class ProjectManager extends FileBrowser {
                     if (editor.document.isUntitled || editor.document.uri.path === this.projectListFile) {
                         continue;
                     }
-
-                    let inKnownProject = false;
-                    for (let projectPath of this.projects.values()) {
-                        if (editor.document.uri.path.startsWith(projectPath)) {
-                            inKnownProject = true;
-                            break;
+                    this.tryAddProject(editor.document.uri.path).then(
+                        (projectRoot) => {
+                            if (projectRoot) {
+                                updateRecentHistoryLog(PathLib.basename(projectRoot!), editor.document.uri.path);
+                                saveRecentHistorLog(this.recentHistoryLog);
+                            }
                         }
-                    }
-                    if (inKnownProject) {
-                        continue;
-                    }
-
-                    let workspaceFolder = workspace.getWorkspaceFolder(editor.document.uri);
-                    if (workspaceFolder !== undefined && this.projects.has(workspaceFolder.name)) {
-                        continue;
-                    }
-
-                    this.tryAddProject(editor.document.uri.path);
+                    );
                 }
             }
         );
     }
 
-    /*
-     * Try to add a project containing the `filePath`.
-     * The directory containing `fileConsideredProject` will be
-     * considered the project root dir.
-     */
-    async tryAddProject(filePath: string) {
+    async tryAddProject(filePath: string): Promise<string | undefined> {
+        let projectRoot = await this.tryResolveProjectRoot(filePath);
+
+        if (projectRoot) {
+            let projectName = PathLib.basename(projectRoot);
+            if (!this.projects.has(projectName)) {
+                this.projects.set(PathLib.basename(projectRoot), projectRoot);
+                this.saveProjects();
+            }
+            return projectRoot;
+        }
+
+        console.log(`failed to detect a project for ${filePath}`);
+    }
+
+    async tryResolveProjectRoot(filePath: string): Promise<string | undefined> {
+        // 1. try workspace folder
+        let workspaceFolder = workspace.getWorkspaceFolder(Uri.file(filePath));
+        if (workspaceFolder) {
+            return workspaceFolder!.uri.path;
+        }
+
+        // 2. try file item cache
+        let cachedFileItem = getFileItemFromCache(filePath);
+        if (cachedFileItem) {
+            return cachedFileItem.projectRoots.values().next().value;
+        }
+
+        // 3. try saved project list
+        for (let projectPath of this.projects.values()) {
+            if (filePath.startsWith(projectPath)) {
+                return projectPath;
+            }
+        }
+
+        // 4. guess project list
         let isDir = await utils.isDir(filePath);
         let dir = isDir ? filePath : PathLib.dirname(filePath);
 
@@ -355,14 +345,12 @@ export class ProjectManager extends FileBrowser {
                 fileName => this.fileConsideredProject.has(fileName)
             );
             if (intersection.length !== 0) {
-                this.projects.set(PathLib.basename(dir), dir);
-                this.saveProjects();
-                return;
+                return dir;
             }
             dir = PathLib.dirname(dir);
         }
 
-        console.log(`failed to detect a project for ${filePath}`);
+        return undefined;
     }
 
     saveProjects() {
@@ -372,13 +360,20 @@ export class ProjectManager extends FileBrowser {
                 this.projects.delete(projName);
             }
         }
-        let content = JSON.stringify(this.projects.toJSON(), null, 4);
+        let jsonObj: { [key: string]: string } = {};
+        this.projects.forEach(
+            (v, k) => {
+                jsonObj[k] = v;
+            }
+        );
+        let content = JSON.stringify(jsonObj, null, 4);
         fs.writeFileSync(this.projectListFile, content);
     }
 
     dispose() {
         utils.setContext(utils.States.inLgfProjMgr, false);
         this.projectQuickPick?.dispose();
+        this.projectFileQuickPick?.dispose();
         super.dispose();
     }
 }
