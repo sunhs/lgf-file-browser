@@ -278,19 +278,21 @@ export class ProjectManager extends FileBrowser {
 
         window.onDidChangeVisibleTextEditors(
             (editors) => {
-                for (let editor of editors) {
-                    if (editor.document.isUntitled || editor.document.uri.path === this.projectListFile) {
-                        continue;
-                    }
-                    this.tryAddProject(editor.document.uri.path).then(
-                        (projectRoot) => {
-                            if (projectRoot) {
-                                updateRecentHistoryLog(PathLib.basename(projectRoot!), editor.document.uri.path);
-                                saveRecentHistorLog(this.recentHistoryLog);
-                            }
-                        }
-                    );
+                if (editors.length === 0) {
+                    return;
                 }
+
+                let editor = window.activeTextEditor!;
+                if (editor.document.isUntitled || editor.document.uri.path === this.projectListFile) {
+                    return;
+                } this.tryAddProject(editor.document.uri.path).then(
+                    (projectRoot) => {
+                        if (projectRoot) {
+                            updateRecentHistoryLog(PathLib.basename(projectRoot!), editor.document.uri.path);
+                            saveRecentHistorLog(this.recentHistoryLog);
+                        }
+                    }
+                );
             }
         );
     }
@@ -357,6 +359,7 @@ export class ProjectManager extends FileBrowser {
         for (let projName of this.projects.keys()) {
             let projPath = this.projects.get(projName)!;
             if (!fs.existsSync(projPath) || !PathLib.isAbsolute(projPath)) {
+                console.log(`remove project ${projPath}`);
                 this.projects.delete(projName);
             }
         }
