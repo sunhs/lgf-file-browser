@@ -26,6 +26,8 @@ export class ProjectManager extends FileBrowser {
     constructor() {
         super();
 
+        this.setUp();
+
         if (!fs.existsSync(this.recentHistoryLog)) {
             fs.writeFileSync(this.recentHistoryLog, "{}");
         }
@@ -327,6 +329,12 @@ export class ProjectManager extends FileBrowser {
 
         // 3. try saved project list
         for (let projectPath of this.projects.values()) {
+            // Avoid the condition where
+            // filePath: /path/to/dir_xxx/file
+            // projectPath: /path/to/dir
+            if (!projectPath.endsWith("/")) {
+                projectPath = projectPath + "/";
+            }
             if (filePath.startsWith(projectPath)) {
                 return projectPath;
             }

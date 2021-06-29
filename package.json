@@ -2,7 +2,7 @@
 	"name": "lgf-file-browser",
 	"displayName": "lgf-file-browser",
 	"description": "",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"publisher": "hyesun",
 	"repository": {
 		"url": "https://github.com/sunhs/lgf-file-browser"
@@ -14,6 +14,7 @@
 		"Other"
 	],
 	"activationEvents": [
+		"*",
 		"onCommand:lgf-file-browser.show",
 		"onCommand:lgf-file-browser.goUp",
 		"onCommand:lgf-file-browser.toggleHidden",
