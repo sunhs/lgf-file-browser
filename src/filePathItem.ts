@@ -54,11 +54,15 @@ export function getFileItemFromCache(filePath: string): ProjectFileItem | undefi
 }
 
 
-export function loadRecentHistoryLog(logFile: string) {
+export function loadRecentHistoryLog(logFile: string, availableProjects?: Set<string>) {
     let content = fs.readFileSync(logFile, "utf8");
     let log: { [key: string]: string[] } = JSON.parse(content);
     Object.entries(log).forEach(
         ([projectName, filePaths]) => {
+            if (availableProjects! && !availableProjects.has(projectName)) {
+                return;
+            }
+
             let cache = new LruCache<string>(LRU_MAX_SIZE);
             for (let filePath of filePaths) {
                 cache.put(filePath);

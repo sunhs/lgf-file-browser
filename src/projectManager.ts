@@ -45,6 +45,7 @@ export class ProjectManager extends FileBrowser {
             fs.writeFileSync(this.projectListFile, "{}");
         }
         let parsed: { [key: string]: string } = JSON.parse(fs.readFileSync(this.projectListFile, "utf8"));
+        this.projects.clear();
         Object.entries(parsed).forEach(
             ([k, v]) => {
                 this.projects.set(k, v);
@@ -297,6 +298,20 @@ export class ProjectManager extends FileBrowser {
                 );
             }
         );
+
+        // let watcher = workspace.createFileSystemWatcher(this.projectListFile, true, false, true);
+        // watcher.onDidChange(
+        //     (uri) => {
+        //         let availableProjects: Set<string> = new Set<string>();
+        //         this.projects.forEach(
+        //             (_, k) => {
+        //                 availableProjects.add(k);
+        //             }
+        //         );
+        //         loadRecentHistoryLog(this.recentHistoryLog, availableProjects);
+        //         saveRecentHistorLog(this.recentHistoryLog);
+        //     }
+        // );
     }
 
     async tryAddProject(filePath: string): Promise<string | undefined> {
