@@ -66,7 +66,7 @@ export class FixSizedMap<K, V> {
 
 
 // use Map's property of ordered insertion to build an LRU cache
-export class LruCache<T> {
+export class WeightedLruCache<T> {
     private data: Map<T, number>;
     private maxEntries: number;
 
@@ -108,3 +108,151 @@ export class LruCache<T> {
         return this.data;
     }
 }
+
+
+class LinkedListNode<K, V> {
+    prev?: LinkedListNode<K, V> = undefined;
+    next?: LinkedListNode<K, V> = undefined;
+    key?: K = undefined;
+    value?: V = undefined;
+
+    constructor(prev?: LinkedListNode<K, V>, next?: LinkedListNode<K, V>, key?: K, value?: V) {
+        this.prev = prev;
+        this.next = next;
+        this.key = key;
+        this.value = value;
+    }
+}
+
+
+enum MapGetType {
+    key = "key",
+    value = "value",
+    entry = "entry"
+}
+
+export class LruMap<K, V> {
+    size: number;
+    private capacity: number;
+    private indexMap: Map<K, LinkedListNode<K, V>>;
+    private head: LinkedListNode<K, V>;
+    private tail: LinkedListNode<K, V>;
+
+    constructor(maxEntries: number) {
+        this.size = 0;
+        this.capacity = maxEntries;
+        this.indexMap = new Map<K, LinkedListNode<K, V>>();
+        this.head = new LinkedListNode<K, V>();
+        this.tail = new LinkedListNode<K, V>();
+        this.head.next = this.tail;
+        this.tail.prev = this.head;
+    }
+
+    public get(key: K, move: boolean = true): V | undefined {
+        if (!this.indexMap.has(key)) {
+            return undefined;
+        }
+
+        let node = this.indexMap.get(key)!;
+        if (move) {
+            this.moveToHead(node);
+        }
+        return node.value;
+    }
+
+    public set(key: K, value: V): this {
+        if (this.get(key)) {
+            this.indexMap.get(key)!.value = value;
+            return this;
+        }
+
+        let node = new LinkedListNode<K, V>(this.head, this.head.next!, key, value);
+        this.head.next!.prev = node;
+        this.head.next = node;
+        this.indexMap.set(key, node);
+
+        if (this.indexMap.size > this.capacity) {
+            this.indexMap.delete(this.tail.prev!.key!);
+            this.tail.prev = this.tail.prev!.prev;
+            this.tail.prev!.next = this.tail;
+        }
+
+        this.size = this.indexMap.size;
+        return this;
+    }
+
+    delete(key: K): boolean {
+        let deleted = this.indexMap.delete(key);
+        this.size = this.indexMap.size;
+        return deleted;
+    }
+
+    has(key: K): boolean {
+        return this.indexMap.has(key);
+    }
+
+    clear() {
+        this.indexMap.clear();
+        this.size = this.indexMap.size;
+        this.head.next = this.tail;
+        this.tail.prev = this.head;
+    }
+
+    keys(): K[] {
+        let keys: K[] = [];
+        let node = this.head.next!;
+        while (node.next) {
+            if (this.indexMap.has(node.key!)) {
+                keys.push(node.key!);
+            }
+            node = node.next;
+        }
+        return keys;
+    }
+
+    values(): V[] {
+        let values: V[] = [];
+        let node = this.head.next!;
+        while (node.next) {
+            if (this.indexMap.has(node.key!)) {
+                values.push(node.value!);
+            }
+            node = node.next;
+        }
+        return values;
+    }
+
+    entries(): [K, V][] {
+        let entries: [K, V][] = [];
+        let node = this.head.next!;
+        while (node.next) {
+            if (this.indexMap.has(node.key!)) {
+                entries.push([node.key!, node.value!]);
+            }
+            node = node.next;
+        }
+        return entries;
+    }
+
+    moveToHead(node: LinkedListNode<K, V>) {
+        node.prev!.next = node.next;
+        node.next!.prev = node.prev;
+        node.prev = this.head;
+        node.next = this.head.next;
+        this.head.next!.prev = node;
+        this.head.next = node;
+    }
+}
+
+
+// class LruMapIterator<K, V> implements Iterator<[K, V]> {
+//     private indexMap: Map<K, LinkedListNode<K, V>>;
+//     private head: LinkedListNode<K, V>;
+//     private tail: LinkedListNode<K, V>;
+
+//     constructor(index: Map<K, LinkedListNode<K, V>>, head: LinkedListNode<K, V>, tail: LinkedListNode<K, V>) {
+//         this.indexMap = index;
+//         this.head = head;
+//         this.tail = tail;
+//     }
+// }

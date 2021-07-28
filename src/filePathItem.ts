@@ -2,7 +2,7 @@ import { QuickPickItem, FileType, CancellationError, window, workspace, Uri, Rel
 import * as PathLib from "path";
 import * as OS from "os";
 import * as fs from "fs";
-import { FixSizedMap, LruCache } from "./utils";
+import { FixSizedMap, WeightedLruCache } from "./utils";
 
 
 const FILE_CACHE_MAX_SIZE = 200;
@@ -46,7 +46,7 @@ export class FilePathItem implements QuickPickItem {
 // map file path to project file item
 let FILE_ITEM_CACHE = new FixSizedMap<string, ProjectFileItem>(FILE_CACHE_MAX_SIZE);
 // map project name to LRU cache
-let PROJECT_FILE_LRU_CACHE = new Map<string, LruCache<string>>();
+let PROJECT_FILE_LRU_CACHE = new Map<string, WeightedLruCache<string>>();
 
 
 export function getFileItemFromCache(filePath: string): ProjectFileItem | undefined {
@@ -63,7 +63,7 @@ export function loadRecentHistoryLog(logFile: string, availableProjects?: Set<st
                 return;
             }
 
-            let cache = new LruCache<string>(LRU_MAX_SIZE);
+            let cache = new WeightedLruCache<string>(LRU_MAX_SIZE);
             for (let filePath of filePaths) {
                 cache.put(filePath);
             }
@@ -89,7 +89,7 @@ export function saveRecentHistorLog(logFile: string) {
 
 export function updateRecentHistoryLog(projectName: string, filePath: string) {
     if (!PROJECT_FILE_LRU_CACHE.has(projectName)) {
-        PROJECT_FILE_LRU_CACHE.set(projectName, new LruCache<string>(LRU_MAX_SIZE));
+        PROJECT_FILE_LRU_CACHE.set(projectName, new WeightedLruCache<string>(LRU_MAX_SIZE));
     }
     PROJECT_FILE_LRU_CACHE.get(projectName)!.put(filePath);
 }
