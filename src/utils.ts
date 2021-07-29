@@ -148,15 +148,13 @@ export class LruMap<K, V> {
         this.tail.prev = this.head;
     }
 
-    public get(key: K, move: boolean = true): V | undefined {
+    public get(key: K): V | undefined {
         if (!this.indexMap.has(key)) {
             return undefined;
         }
 
         let node = this.indexMap.get(key)!;
-        if (move) {
-            this.moveToHead(node);
-        }
+        this.moveNodeToHead(node);
         return node.value;
     }
 
@@ -173,8 +171,7 @@ export class LruMap<K, V> {
 
         if (this.indexMap.size > this.capacity) {
             this.indexMap.delete(this.tail.prev!.key!);
-            this.tail.prev = this.tail.prev!.prev;
-            this.tail.prev!.next = this.tail;
+            this.deleteNode(this.tail.prev!);
         }
 
         this.size = this.indexMap.size;
@@ -182,6 +179,10 @@ export class LruMap<K, V> {
     }
 
     delete(key: K): boolean {
+        let node = this.indexMap.get(key);
+        if (node) {
+            this.deleteNode(node);
+        }
         let deleted = this.indexMap.delete(key);
         this.size = this.indexMap.size;
         return deleted;
@@ -234,13 +235,20 @@ export class LruMap<K, V> {
         return entries;
     }
 
-    moveToHead(node: LinkedListNode<K, V>) {
+    moveNodeToHead(node: LinkedListNode<K, V>) {
         node.prev!.next = node.next;
         node.next!.prev = node.prev;
         node.prev = this.head;
         node.next = this.head.next;
         this.head.next!.prev = node;
         this.head.next = node;
+    }
+
+    deleteNode(node: LinkedListNode<K, V>) {
+        node.prev!.next = node.next;
+        node.next!.prev = node.prev;
+        node.prev = undefined;
+        node.next = undefined;
     }
 }
 

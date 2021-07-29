@@ -5,6 +5,7 @@ import * as utils from "./utils";
 import { commands, QuickPick, RelativePattern, Uri, window, workspace } from "vscode";
 import { FileBrowser } from "./fileBrowser";
 import { FilePathItem, ProjectFileItem, ProjectItem, getFileItemFromCache, loadRecentHistoryLog, saveRecentHistorLog, updateRecentHistoryLog } from "./filePathItem";
+import { LruMap } from "./utils";
 
 
 enum Messages {
@@ -17,7 +18,7 @@ enum Messages {
 
 export class ProjectManager extends FileBrowser {
     projectListFile: string = PathLib.join(OS.homedir(), ".lgf-proj-mgr.json");
-    projects: Map<string, string> = new Map<string, string>();
+    projects: LruMap<string, string> = new LruMap<string, string>(100);
     recentHistoryLog: string = PathLib.join(OS.homedir(), ".lgf-proj-mgr-rank.json");
     projectQuickPick: QuickPick<ProjectItem> | undefined;
     projectFileQuickPick: QuickPick<ProjectFileItem> | undefined;
@@ -46,7 +47,8 @@ export class ProjectManager extends FileBrowser {
         }
         let parsed: { [key: string]: string } = JSON.parse(fs.readFileSync(this.projectListFile, "utf8"));
         this.projects.clear();
-        Object.entries(parsed).forEach(
+        // In the list file, entries are listed from newer to older.
+        Object.entries(parsed).reverse().forEach(
             ([k, v]) => {
                 this.projects.set(k, v);
             }
@@ -135,6 +137,8 @@ export class ProjectManager extends FileBrowser {
     onDidAcceptOpenProject() {
         let selected = this.projectQuickPick!.selectedItems[0];
         selected.intoWorkspace();
+        this.projects.set(selected.label, selected.absProjectRoot);
+        this.saveProjects();
         this.dispose();
     }
 
@@ -143,11 +147,15 @@ export class ProjectManager extends FileBrowser {
     // so this command automatically adds the project to workspace before finding files.
     onDidAcceptFindFileFromProject() {
         let selected = this.projectQuickPick!.selectedItems[0];
+        this.projects.set(selected.label, selected.absProjectRoot);
+        this.saveProjects();
         this.buildQuickPickFromProjectFiles(selected);
     }
 
     onDidAcceptFindFileFromWSProject() {
         let projectItem = this.projectQuickPick!.selectedItems[0];
+        this.projects.set(projectItem.label, projectItem.absProjectRoot);
+        this.saveProjects();
         this.buildQuickPickFromProjectFiles(projectItem);
     }
 
@@ -190,7 +198,7 @@ export class ProjectManager extends FileBrowser {
     buildQuickPickFromProjectList() {
         this.projectQuickPick = window.createQuickPick();
         let projectItems: ProjectItem[] = [];
-        this.projects.forEach(
+        this.projects.values().forEach(
             (v, _) => {
                 projectItems.push(new ProjectItem(v));
             }
@@ -379,16 +387,15 @@ export class ProjectManager extends FileBrowser {
     }
 
     saveProjects() {
-        for (let projName of this.projects.keys()) {
-            let projPath = this.projects.get(projName)!;
+        for (let [projName, projPath] of this.projects.entries()) {
             if (!fs.existsSync(projPath) || !PathLib.isAbsolute(projPath)) {
                 console.log(`remove project ${projPath}`);
                 this.projects.delete(projName);
             }
         }
         let jsonObj: { [key: string]: string } = {};
-        this.projects.forEach(
-            (v, k) => {
+        this.projects.entries().forEach(
+            ([k, v], _) => {
                 jsonObj[k] = v;
             }
         );
