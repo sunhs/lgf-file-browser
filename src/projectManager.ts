@@ -94,13 +94,19 @@ export class ProjectManager extends FileBrowser {
             this.tryResolveProjectRoot(document.uri.path).then(
                 (projectRoot) => {
                     if (projectRoot === undefined) {
-                        window.showErrorMessage("cannot infer current project");
-                        return;
+                        window.showErrorMessage("cannot infer current project, choose another project");
+                        this.buildQuickPickFromProjectList();
+                        this.projectQuickPick!.onDidAccept(this.onDidAcceptFindFileFromProject.bind(this));
+                    } else {
+                        utils.setContext(utils.States.inLgfProjMgr, true);
+                        this.buildQuickPickFromProjectFiles(new ProjectItem(projectRoot!));
                     }
-                    utils.setContext(utils.States.inLgfProjMgr, true);
-                    this.buildQuickPickFromProjectFiles(new ProjectItem(projectRoot!));
                 }
             );
+        } else {
+            window.showErrorMessage("cannot infer current project, choose another project");
+            this.buildQuickPickFromProjectList();
+            this.projectQuickPick!.onDidAccept(this.onDidAcceptFindFileFromProject.bind(this));
         }
     }
 
