@@ -344,16 +344,16 @@ export class ProjectManager extends FileBrowser {
     }
 
     async tryResolveProjectRoot(filePath: string): Promise<string | undefined> {
-        // 1. try workspace folder
-        let workspaceFolder = workspace.getWorkspaceFolder(Uri.file(filePath));
-        if (workspaceFolder) {
-            return workspaceFolder!.uri.path;
-        }
-
-        // 2. try file item cache
+        // 1. try file item cache
         let cachedFileItem = getFileItemFromCache(filePath);
         if (cachedFileItem) {
             return cachedFileItem.projectRoots.values().next().value;
+        }
+
+        // 2. try workspace folder
+        let workspaceFolder = workspace.getWorkspaceFolder(Uri.file(filePath));
+        if (workspaceFolder) {
+            return workspaceFolder!.uri.path;
         }
 
         // 3. try saved project list
