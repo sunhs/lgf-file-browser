@@ -1,6 +1,7 @@
 import * as OS from "os";
 import * as PathLib from "path";
 import * as fs from "fs";
+import { Md5 } from "ts-md5";
 import * as utils from "./utils";
 import { commands, QuickPick, RelativePattern, Uri, window, workspace } from "vscode";
 import { FileBrowser } from "./fileBrowser";
@@ -18,6 +19,7 @@ enum Messages {
 
 export class ProjectManager extends FileBrowser {
     projectListFile: string = PathLib.join(OS.homedir(), ".lgf-proj-mgr.json");
+    lastProjectListFileHash: string | undefined;
     projects: LruMap<string, string> = new LruMap<string, string>(100);
     recentHistoryLog: string = PathLib.join(OS.homedir(), ".lgf-proj-mgr-rank.json");
     projectQuickPick: QuickPick<ProjectItem> | undefined;
@@ -45,14 +47,20 @@ export class ProjectManager extends FileBrowser {
         if (!fs.existsSync(this.projectListFile)) {
             fs.writeFileSync(this.projectListFile, "{}");
         }
-        let parsed: { [key: string]: string } = JSON.parse(fs.readFileSync(this.projectListFile, "utf8"));
-        this.projects.clear();
-        // In the list file, entries are listed from newer to older.
-        Object.entries(parsed).reverse().forEach(
-            ([k, v]) => {
-                this.projects.set(k, v);
-            }
-        );
+
+        let content = fs.readFileSync(this.projectListFile, "utf8");
+        let hash = Md5.hashStr(content);
+        if (this.lastProjectListFileHash !== hash) {
+            let parsed: { [key: string]: string } = JSON.parse(content);
+            this.projects.clear();
+            // In the list file, entries are listed from newer to older.
+            Object.entries(parsed).reverse().forEach(
+                ([k, v]) => {
+                    this.projects.set(k, v);
+                }
+            );
+            this.lastProjectListFileHash = hash;
+        }
     }
 
     /*********************************** QUICKPICK COMMAND SECTION ***********************************/
@@ -129,6 +137,7 @@ export class ProjectManager extends FileBrowser {
             return;
         }
         let dir = this.quickPick!.activeItems[0].absPath!;
+        new ProjectItem(dir).intoWorkspace();
         this.projects.set(PathLib.basename(dir), dir);
         this.saveProjects();
         window.showInformationMessage(Messages.projectAdded);
@@ -406,7 +415,10 @@ export class ProjectManager extends FileBrowser {
             }
         );
         let content = JSON.stringify(jsonObj, null, 4);
-        fs.writeFileSync(this.projectListFile, content);
+        let hash = Md5.hashStr(content);
+        if (hash !== this.lastProjectListFileHash) {
+            fs.writeFileSync(this.projectListFile, content);
+        }
     }
 
     dispose() {

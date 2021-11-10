@@ -2,7 +2,7 @@
 	"name": "lgf-file-browser",
 	"displayName": "lgf-file-browser",
 	"description": "",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"publisher": "hyesun",
 	"repository": {
 		"url": "https://github.com/sunhs/lgf-file-browser"
@@ -163,6 +163,7 @@
 		"vscode-test": "^1.5.2"
 	},
 	"dependencies": {
-		"micromatch": "^4.0.4"
+		"micromatch": "^4.0.4",
+		"ts-md5": "^1.2.9"
 	}
 }
