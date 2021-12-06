@@ -341,11 +341,11 @@ export class ProjectManager extends FileBrowser {
         let projectRoot = await this.tryResolveProjectRoot(filePath);
 
         if (projectRoot) {
-            let projectName = PathLib.basename(projectRoot);
-            if (!this.projects.has(projectName)) {
-                this.projects.set(PathLib.basename(projectRoot), projectRoot);
-                this.saveProjects();
-            }
+            // No matter whether the projectName already exists, update it.
+            // So that the same projectName for different projects won't be occupied by
+            // one project permanently.
+            this.projects.set(PathLib.basename(projectRoot), projectRoot);
+            this.saveProjects();
             return projectRoot;
         }
 
