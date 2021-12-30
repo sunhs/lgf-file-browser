@@ -111,7 +111,11 @@ export class ProjectManager extends FileBrowser {
                     }
                 }
             );
-        } else {
+        } else if (workspace.workspaceFolders && workspace.workspaceFolders.length === 1) {
+            utils.setContext(utils.States.inLgfFileBrowser, true);
+            this.buildQuickPickFromProjectFiles(new ProjectItem(workspace.workspaceFolders[0].uri.path));
+        }
+        else {
             window.showErrorMessage("cannot infer current project, choose another project");
             this.buildQuickPickFromProjectList();
             this.projectQuickPick!.onDidAccept(this.onDidAcceptFindFileFromProject.bind(this));
