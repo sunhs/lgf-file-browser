@@ -2,7 +2,7 @@
 	"name": "lgf-file-browser",
 	"displayName": "lgf-file-browser",
 	"description": "",
-	"version": "0.2.4",
+	"version": "0.2.5",
 	"publisher": "hyesun",
 	"repository": {
 		"url": "https://github.com/sunhs/lgf-file-browser"
@@ -79,7 +79,7 @@
 		],
 		"keybindings": [
 			{
-				"key": "ctrl+c ctrl+f",
+				"key": "shift+alt+p f",
 				"command": "lgf-file-browser.show"
 			},
 			{
@@ -108,35 +108,35 @@
 				"when": "inLgfFileBrowser && !inLgfProjMgr"
 			},
 			{
-				"key": "ctrl+c ctrl+a",
+				"key": "shift+alt+p a",
 				"command": "lgf-file-browser.addProject"
 			},
 			{
-				"key": "ctrl+c ctrl+o",
+				"key": "shift+alt+p o",
 				"command": "lgf-file-browser.openProject"
 			},
 			{
-				"key": "ctrl+c ctrl+p",
+				"key": "shift+alt+p p",
 				"command": "lgf-file-browser.findFileFromProject"
 			},
 			{
-				"key": "ctrl+c ctrl+w",
+				"key": "shift+alt+p w",
 				"command": "lgf-file-browser.findFileFromWorkspaceProject"
 			},
 			{
-				"key": "ctrl+c ctrl+c",
+				"key": "shift+alt+p c",
 				"command": "lgf-file-browser.findFileFromCurrentProject"
 			},
 			{
-				"key": "ctrl+c ctrl+d",
+				"key": "shift+alt+p d",
 				"command": "lgf-file-browser.deleteProjectFromWorkspace"
 			},
 			{
-				"key": "ctrl+c ctrl+e",
+				"key": "shift+alt+p e",
 				"command": "lgf-file-browser.editProjectList"
 			},
 			{
-				"key": "ctrl+a",
+				"key": "ctrl+j",
 				"command": "lgf-file-browser.confirmAddProject",
 				"when": "inLgfFileBrowser && inLgfProjMgr"
 			}
