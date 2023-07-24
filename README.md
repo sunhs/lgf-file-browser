@@ -1,6 +1,6 @@
 # LGF File Browser
 
-This is a file browser for VSCode which lets you quickly navigate through files, add or delete projects.
+This is a file browser + project manager for VSCode, which lets you quickly navigate through files, add or delete projects, ***with only the keyboard***.
 
 There are often times when you don't want to leave your hands off the keyboard, just to reach to the mouse for a few clicks and go back typing. There are often times when you press `cmd+p` to search for a file, only to find multiple files with the same name coming from different projects, struggling to distinguish between them.
 
@@ -19,20 +19,20 @@ Functionalities are splitted into two parts:
 
 When you add a folder to the workspace or open a new document, this extension will try to discover the project and save it.
 
-- `lgf-file-browser.show` reveal the file browser (`C-c C-f`)
+- `lgf-file-browser.show` reveal the file browser (`shift+alt+p f`)
 - `lgf-file-browser.goUp` go to the parent directory (`backspace`)
 - `lgf-file-browser.goToHome` go to the home directory (`~`)
 - `lgf-file-browser.goToRoot` go to `/` directory (`/`)
 - `lgf-file-browser.toogleHidden` hide or show dot files (`C-h`)
 - `lgf-file-browser.toggleFilter` hide or show filttered files (`C-f`)
-- `lgf-file-browser.addProject` choose a directory and save to the project list (`C-c C-a`)
-- `lgf-file-browser.confirmAddProject` this is a quick pick action for `lgf-file-browser.addProject`, since the `enter` is used to go into a directory, we need some key to confirm adding (`C-a`)
-- `lgf-file-browser.openProject` open a saved project, bring it to the workspace (`C-c C-o`)
-- `lgf-file-browser.findFileFromProject` choose a project from the saved project list and find a file in it (`C-c C-p`)
-- `lgf-file-browser.findFileFromWorkspaceProject` choose a project from workspace and find a file in it (`C-c C-w`)
-- `lgf-file-browser.findFileFromCurrentProject` find a file in the current project, which is inferred from the file you're editting (`C-c C-c`)
-- `lgf-file-browser.deleteProjectFromWorkspace` remove a project from the workspace (`C-c C-d`)
-- `lgf-file-browser.editProjectList` edit the project list (`C-c C-e`)
+- `lgf-file-browser.addProject` choose a directory and save to the project list (`shift+alt+p a`)
+- `lgf-file-browser.confirmAddProject` this is a quick pick action for `lgf-file-browser.addProject`, since the `enter` is used to go into a directory, we need some key to confirm adding (`C-j`)
+- `lgf-file-browser.openProject` open a saved project, bring it to the workspace (`shift+alt+p o`)
+- `lgf-file-browser.findFileFromProject` choose a project from the saved project list and find a file in it (`shift+alt+p p`)
+- `lgf-file-browser.findFileFromWorkspaceProject` choose a project from workspace and find a file in it (`shift+alt+p w`)
+- `lgf-file-browser.findFileFromCurrentProject` find a file in the current project, which is inferred from the file you're editting (`shift+alt+p c`)
+- `lgf-file-browser.deleteProjectFromWorkspace` remove a project from the workspace (`shift+alt+p d`)
+- `lgf-file-browser.editProjectList` edit the project list (`shift+alt+p e`)
 
 ## Configuration
 
