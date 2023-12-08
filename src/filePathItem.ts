@@ -43,9 +43,10 @@ export class FilePathItem implements QuickPickItem {
 }
 
 
-// map file path to project file item
+// Map file path to ProjectFileItem, just to quickly find a ProjectFileItem from its absPath.
 let FILE_ITEM_CACHE = new FixSizedMap<string, ProjectFileItem>(FILE_CACHE_MAX_SIZE);
-// map project name to LRU cache
+// Map project name to LRU cache of project files.
+// The WeightedLruCache is not really an LruCache, as it does nothing on visiting.
 let PROJECT_FILE_LRU_CACHE = new Map<string, WeightedLruCache<string>>();
 
 

@@ -36,6 +36,9 @@ export function isDirType(fileType: FileType): boolean {
 }
 
 
+// A map with size limit.
+// On Insertion, when exceeding size limit, the oldest item will be deleted.
+// So can be used as a simple cache.
 export class FixSizedMap<K, V> {
     private data: Map<K, V>;
     private maxEntries: number;
@@ -66,6 +69,10 @@ export class FixSizedMap<K, V> {
 
 
 // use Map's property of ordered insertion to build an LRU cache
+// Actually not an LruCache, as it does noting on visiting.
+// Can be thought of as an Array with quick search (map).
+// And the later an item is inserted to the Array, the bigger weight (index).
+// It's not a common data structure (strongly related to PROJECT_FILE_LRU_CACHE) and maybe should be moved elsewhere.
 export class WeightedLruCache<T> {
     private data: Map<T, number>;
     private maxEntries: number;
