@@ -169,7 +169,7 @@ export class ProjectItem implements QuickPickItem {
 
     intoWorkspace(): boolean {
         let existedFolder = workspace.getWorkspaceFolder(Uri.file(this.absProjectRoot));
-        if (!existedFolder) {
+        if (!existedFolder || existedFolder.uri.path !== this.absProjectRoot) {
             let status = workspace.updateWorkspaceFolders(
                 workspace.workspaceFolders ? workspace.workspaceFolders.length : 0,
                 null,
