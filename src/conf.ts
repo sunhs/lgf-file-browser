@@ -5,6 +5,7 @@ enum ConfigEnum {
     filterGlobPatterns = "filterGlobPatterns",
     projectConfFiles = "projectConfFiles",
     projectDotIgnoreFiles = "projectDotIgnoreFiles",
+    projectDirMapping = "projectDirMapping",
 }
 
 
@@ -17,10 +18,15 @@ export class Config {
     filterGlobPatterns: string[] = [];
     projectConfFiles: string[] = [];
     projectDotIgnoreFiles: string[] = [];
+    projectDirMapping: { [key: string]: string } = {};
 
     update() {
         this.filterGlobPatterns = getConfig(ConfigEnum.filterGlobPatterns)!;
         this.projectConfFiles = getConfig(ConfigEnum.projectConfFiles)!;
         this.projectDotIgnoreFiles = getConfig(ConfigEnum.projectDotIgnoreFiles)!;
+        this.projectDirMapping = getConfig(ConfigEnum.projectDirMapping)!;
     }
 }
+
+
+export let globalConf = new Config();

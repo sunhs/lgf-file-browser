@@ -1,10 +1,10 @@
-import { commands, QuickPick, Uri, window, workspace } from "vscode";
-import * as PathLib from "path";
-import * as OS from "os";
-import * as micromatch from "micromatch";
+import { isMatch } from "micromatch";
+import { homedir } from "os";
+import { basename, dirname, isAbsolute, join } from "path";
+import { QuickPick, Uri, commands, window, workspace } from "vscode";
+import { globalConf } from "./conf";
 import { FilePathItem } from "./filePathItem";
-import { Config } from "./conf";
-import * as utils from "./utils";
+import { States, isDir, isDirType, setContext } from "./utils";
 
 
 export class FileBrowser {
@@ -13,25 +13,24 @@ export class FileBrowser {
     currentItems: FilePathItem[] = [];
     hideDotFiles: boolean = true;
     filterFiles: boolean = true;
-    config: Config = new Config();
 
     // the start point
     show() {
-        this.config.update();
+        globalConf.update();
         this.hideDotFiles = true;
-        this.filterFiles = this.config.filterGlobPatterns.length !== 0;
+        this.filterFiles = globalConf.filterGlobPatterns.length !== 0;
 
         this.quickPick = window.createQuickPick();
 
         let document = window.activeTextEditor?.document;
-        let currentDir = OS.homedir();
+        let currentDir = homedir();
         if (document && !document.isUntitled) {
-            currentDir = PathLib.dirname(document.uri.path);
+            currentDir = dirname(document.uri.path);
         }
         this.currentDir = currentDir;
 
-        utils.setContext(utils.States.inLgfFileBrowser, true);
-        utils.setContext(utils.States.lgfFileBrowserEmpty, true);
+        setContext(States.inLgfFileBrowser, true);
+        setContext(States.lgfFileBrowserEmpty, true);
         this.update(this.currentDir);
         this.quickPick!.onDidAccept(this.onDidAccept.bind(this));
         this.quickPick!.onDidChangeValue(this.onDidChangeValue.bind(this));
@@ -39,14 +38,14 @@ export class FileBrowser {
     }
 
     dispose() {
-        utils.setContext(utils.States.inLgfFileBrowser, false);
-        utils.setContext(utils.States.lgfFileBrowserEmpty, true);
+        setContext(States.inLgfFileBrowser, false);
+        setContext(States.lgfFileBrowserEmpty, true);
         this.currentItems = [];
         this.quickPick?.dispose();
     }
 
     goUp() {
-        let upDir = PathLib.dirname(this.quickPick!.title!);
+        let upDir = dirname(this.quickPick!.title!);
         this.update(upDir);
     }
 
@@ -56,10 +55,10 @@ export class FileBrowser {
         }
 
         let acceptedPath = this.quickPick!.selectedItems[0].absPath!;
-        let isDir = await utils.isDir(acceptedPath);
+        let isDirVar = await isDir(acceptedPath);
         workspace.fs.stat(Uri.file(acceptedPath)).then(
             (stat) => {
-                if (isDir) {
+                if (isDirVar) {
                     this.update(acceptedPath);
                     this.quickPick!.value = "";
                 } else {
@@ -71,14 +70,14 @@ export class FileBrowser {
     }
 
     onDidChangeValue() {
-        utils.setContext(utils.States.lgfFileBrowserEmpty, this.quickPick?.value === "");
+        setContext(States.lgfFileBrowserEmpty, this.quickPick?.value === "");
     }
 
     async update(dir: string) {
         let uri = Uri.file(dir);
-        let isDir = await utils.isDir(dir);
+        let isDirVar = await isDir(dir);
 
-        if (!(PathLib.isAbsolute(dir) && isDir)) {
+        if (!(isAbsolute(dir) && isDirVar)) {
             window.showErrorMessage(`${dir} is not an absolute path to a directory`);
             this.dispose();
         }
@@ -87,8 +86,8 @@ export class FileBrowser {
         this.currentItems = files.sort(
             ([fileName1, fileType1], [fileName2, fileType2]) => {
                 if (
-                    (utils.isDirType(fileType1) && utils.isDirType(fileType2))
-                    || (!utils.isDirType(fileType1) && !utils.isDirType(fileType2))
+                    (isDirType(fileType1) && isDirType(fileType2))
+                    || (!isDirType(fileType1) && !isDirType(fileType2))
                 ) {
                     if (
                         (fileName1.startsWith(".") && fileName2.startsWith("."))
@@ -99,12 +98,12 @@ export class FileBrowser {
                         return fileName1.startsWith(".") ? -1 : 1;
                     }
                 } else {
-                    return utils.isDirType(fileType1) ? -1 : 1;
+                    return isDirType(fileType1) ? -1 : 1;
                 }
             }
         ).map(
             ([fileName, fileType]) =>
-                new FilePathItem(PathLib.join(dir, fileName), fileType)
+                new FilePathItem(join(dir, fileName), fileType)
         );
 
         this.setItemVisibility();
@@ -120,14 +119,14 @@ export class FileBrowser {
     setItemVisibility() {
         this.currentItems.map(
             (filePathItem) => {
-                let baseName = PathLib.basename(filePathItem.absPath);
+                let baseName = basename(filePathItem.absPath);
                 if (this.hideDotFiles && baseName.startsWith(".")) {
                     filePathItem.show = false;
                     return;
                 }
                 if (this.filterFiles) {
-                    for (let pattern of this.config.filterGlobPatterns) {
-                        if (micromatch.isMatch(baseName, pattern)) {
+                    for (let pattern of globalConf.filterGlobPatterns) {
+                        if (isMatch(baseName, pattern)) {
                             filePathItem.show = false;
                             return;
                         }

@@ -1,4 +1,5 @@
-import { commands, FileStat, FileType, Uri, workspace } from "vscode";
+import { commands, FileType, Uri, workspace } from "vscode";
+import { Config } from "./conf";
 
 
 export enum States {
@@ -33,6 +34,16 @@ export async function isDir(filePath: string): Promise<boolean> {
 
 export function isDirType(fileType: FileType): boolean {
     return (fileType & FileType.Directory) === FileType.Directory;
+}
+
+
+export function transformPath(filePath: string, config: Config): string {
+    for (let [oriPrefix, transformPrefix] of Object.entries(config.projectDirMapping)) {
+        if (filePath.startsWith(oriPrefix)) {
+            return transformPrefix + filePath.substring(oriPrefix.length);
+        }
+    }
+    return filePath;
 }
 
 

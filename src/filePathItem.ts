@@ -1,8 +1,9 @@
-import { QuickPickItem, FileType, CancellationError, window, workspace, Uri, RelativePattern } from "vscode";
-import * as PathLib from "path";
-import * as OS from "os";
-import * as fs from "fs";
-import { FixSizedMap, WeightedLruCache } from "./utils";
+import { readFileSync, writeFileSync } from "fs";
+import { homedir } from "os";
+import { basename, dirname, isAbsolute } from "path";
+import { CancellationError, FileType, QuickPickItem, RelativePattern, Uri, window, workspace } from "vscode";
+import { globalConf } from "./conf";
+import { FixSizedMap, WeightedLruCache, transformPath } from "./utils";
 
 
 const FILE_CACHE_MAX_SIZE = 200;
@@ -17,7 +18,7 @@ export class FilePathItem implements QuickPickItem {
     label: string;
 
     constructor(path: string, fileType: FileType) {
-        if (!PathLib.isAbsolute(path)) {
+        if (!isAbsolute(path)) {
             let err = new CancellationError();
             err.message = `path ${path} is not absolute`;
             throw err;
@@ -25,7 +26,7 @@ export class FilePathItem implements QuickPickItem {
         this.absPath = path;
 
         this.fileType = fileType;
-        let baseName = PathLib.basename(path);
+        let baseName = basename(path);
         switch (this.fileType) {
             case FileType.Directory:
                 this.label = `$(folder) ${baseName}`;
@@ -56,7 +57,7 @@ export function getFileItemFromCache(filePath: string): ProjectFileItem | undefi
 
 
 export function loadRecentHistoryLog(logFile: string, availableProjects?: Set<string>) {
-    let content = fs.readFileSync(logFile, "utf8");
+    let content = readFileSync(logFile, "utf8");
     let log: { [key: string]: string[] } = JSON.parse(content);
     Object.entries(log).forEach(
         ([projectName, filePaths]) => {
@@ -84,7 +85,7 @@ export function saveRecentHistorLog(logFile: string) {
             }
         }
     );
-    fs.writeFileSync(logFile, JSON.stringify(jsonObj));
+    writeFileSync(logFile, JSON.stringify(jsonObj));
 }
 
 
@@ -102,8 +103,9 @@ export class ProjectItem implements QuickPickItem {
     absProjectRoot: string;
 
     constructor(projectRoot: string) {
-        this.label = PathLib.basename(projectRoot);
-        this.description = projectRoot.replace(OS.homedir(), "~");
+        projectRoot = transformPath(projectRoot, globalConf);
+        this.label = basename(projectRoot);
+        this.description = projectRoot.replace(homedir(), "~");
         this.absProjectRoot = projectRoot;
     }
 
@@ -133,7 +135,7 @@ export class ProjectItem implements QuickPickItem {
                         let filePath = uri.path;
 
                         let document = window.activeTextEditor?.document;
-                        if (document && document.uri.path === filePath) {
+                        if (document && transformPath(document.uri.path, globalConf) === filePath) {
                             return;
                         }
 
@@ -203,10 +205,10 @@ export class ProjectFileItem implements QuickPickItem {
     projectRoots: Set<string> = new Set<string>();  // indicating which projects have this file
 
     constructor(projectRoot: string, filePath: string) {
-        this.label = PathLib.basename(filePath);
+        this.label = basename(filePath);
         this.absPath = filePath;
         this.projectRoots.add(projectRoot);
-        let relPath = filePath.replace(PathLib.dirname(projectRoot), "");
+        let relPath = filePath.replace(dirname(projectRoot), "");
         if (relPath.startsWith("/")) {
             relPath = relPath.substr(1);
         }

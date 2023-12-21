@@ -73,6 +73,11 @@
 							".gitignore"
 						],
 						"$comment": "files to extend `filterGlobPatterns` in a project"
+					},
+					"lgf-file-browser.projectDirMapping": {
+						"type": "object",
+						"default": {},
+						"$comment": "Map one dir to another. When project manager encounters a project dir prefixed with the map key, it'll be replaced with the corresponding map value. This is useful when you have a project dir that is a symlink, and you want the symlink dir to be displayed rather than the original dir."
 					}
 				}
 			}
