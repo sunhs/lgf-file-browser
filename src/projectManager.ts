@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import { homedir } from "os";
 import { basename, dirname, isAbsolute, join } from "path";
 import { Md5 } from "ts-md5";
-import { QuickPick, RelativePattern, Uri, commands, window, workspace } from "vscode";
+import { QuickPick, RelativePattern, Uri, WorkspaceFolder, commands, window, workspace } from "vscode";
 import { globalConf } from "./conf";
 import { FileBrowser } from "./fileBrowser";
 import { FilePathItem, ProjectFileItem, ProjectItem, getFileItemFromCache, loadRecentHistoryLog, saveRecentHistorLog, updateRecentHistoryLog } from "./filePathItem";
@@ -30,6 +30,14 @@ export class ProjectManager extends FileBrowser {
         super();
 
         this.setUp();
+
+        // This part is needed according to some situations described in the project listener.
+        workspace.workspaceFolders?.forEach(
+            (folder) => {
+                let transformedProjDir = this.maybeReloadTransformedProject(folder);
+                this.tryAddProject(transformedProjDir);
+            }
+        );
 
         if (!existsSync(this.recentHistoryLog)) {
             writeFileSync(this.recentHistoryLog, "{}");
@@ -294,6 +302,26 @@ export class ProjectManager extends FileBrowser {
         );
     }
 
+    maybeReloadTransformedProject(folder: WorkspaceFolder): string {
+        let projDir = folder.uri.path;
+        let transformedProjDir = transformPath(projDir, globalConf);
+        if (projDir !== transformedProjDir) {
+            workspace.updateWorkspaceFolders(
+                folder.index,
+                1,
+                {
+                    uri: Uri.file(transformedProjDir),
+                    name: folder.name,
+                }
+            );
+        }
+        return transformedProjDir;
+    }
+
+    // The following listeners have some ugly implementations.
+    // They'll detect whether the document/project's directory is transformed.
+    // And if not, the document/project will be closed and the one with the transformed directory will be reopened, which again triggers the listener.
+    // So care should be taken not to invoke the listeners indefinitely.
     registerListener() {
         workspace.onDidChangeWorkspaceFolders(
             (e) => {
@@ -301,23 +329,19 @@ export class ProjectManager extends FileBrowser {
                     return;
                 }
                 for (let folder of e.added) {
-                    this.tryAddProject(folder.uri.path).then((projRoot) => {
-                        if (!projRoot) {
-                            return;
-                        }
-
-                        // 替换成 transformPath 后的 project
-                        if (!folder.uri.path.startsWith(projRoot)) {
-                            workspace.updateWorkspaceFolders(
-                                folder.index,
-                                1,
-                                {
-                                    uri: Uri.file(projRoot),
-                                    name: folder.name,
-                                }
-                            );
-                        }
-                    });
+                    // Replace the project with the transformed one.
+                    // If there're opened projects before this extension is activated, the listeners won't work for them.
+                    // This typically happens when VSCode reloads (especially when it's the first project) and causes the extension to reactivate.
+                    // 3 situations would happen:
+                    //   1) VSCode reloads immediately after the project is added.
+                    //      So the transformation won't happen.
+                    //      In `constructor`, the transformation would work.
+                    //   2) VSCode reloads after the transformed project is loaded.
+                    //      So the project is not added to project list.
+                    //      In `constructor`, the transformed project is added to project list.
+                    //   3) No VSCode reloading happens.
+                    let transformedProjDir = this.maybeReloadTransformedProject(folder);
+                    this.tryAddProject(transformedProjDir);
                 }
             }
         );
