@@ -51,7 +51,7 @@
 							"**/target",
 							"**/*-lock.json"
 						],
-						"$comment": "glob patterns to filter files"
+						"description": "glob patterns to filter files"
 					},
 					"lgf-file-browser.projectConfFiles": {
 						"type": "array",
@@ -65,19 +65,19 @@
 							"Makefile",
 							"setup.py"
 						],
-						"$comment": "files indicating that this is a project directory"
+						"description": "files indicating that this is a project directory"
 					},
 					"lgf-file-browser.projectDotIgnoreFiles": {
 						"type": "array",
 						"default": [
 							".gitignore"
 						],
-						"$comment": "files to extend `filterGlobPatterns` in a project"
+						"description": "files to extend `filterGlobPatterns` in a project"
 					},
 					"lgf-file-browser.projectDirMapping": {
 						"type": "object",
 						"default": {},
-						"$comment": "Map one dir to another. When project manager encounters a project dir prefixed with the map key, it'll be replaced with the corresponding map value. This is useful when you have a project dir that is a symlink, and you want the symlink dir to be displayed rather than the original dir."
+						"description": "Map one dir to another. When project manager encounters a project dir prefixed with the map key, it'll be replaced with the corresponding map value. This is useful when you have a project dir that is a symlink, and you want the symlink dir to be displayed rather than the original dir."
 					}
 				}
 			}
