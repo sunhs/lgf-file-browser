@@ -313,7 +313,7 @@ export class ProjectManager extends FileBrowser {
                 }
 
                 let editor = window.activeTextEditor!;
-                if (editor.document.isUntitled || editor.document.uri.path === this.projectListFile) {
+                if (editor.document.isUntitled || editor.document.uri.path === this.projectListFile || editor.document.uri.path === this.recentHistoryLog) {
                     return;
                 } this.tryAddProject(editor.document.uri.path).then(
                     (projectRoot) => {
