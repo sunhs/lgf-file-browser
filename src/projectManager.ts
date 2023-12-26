@@ -363,12 +363,6 @@ export class ProjectManager extends FileBrowser {
                     return;
                 }
 
-                if (transformedDocPath !== docPath) {
-                    commands.executeCommand("workbench.action.closeActiveEditor");
-                    commands.executeCommand("vscode.open", Uri.file(transformedDocPath));
-                    return;
-                }
-
                 this.tryAddProject(transformedDocPath).then(
                     (projectRoot) => {
                         if (projectRoot) {
